@@ -615,6 +615,15 @@ export async function initDatabase() {
       )
     `);
     
+    // 创建管理员用户
+    const bcrypt = require('bcryptjs');
+    const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+    
+    await pool.execute(`
+      INSERT IGNORE INTO users (username, password, role, expert_type) 
+      VALUES (?, ?, 'admin', 'admin')
+    `, [process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword]);
+    
     console.log('MySQL database initialized successfully');
   } else {
     // SQLite初始化逻辑
