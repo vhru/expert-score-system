@@ -93,6 +93,18 @@ deploy_docker() {
     echo "等待服务启动..."
     sleep 30
     
+    # 初始化数据库（如果需要）
+    echo "检查并初始化数据库..."
+    for i in {1..10}; do
+        if curl -f http://localhost:3000/api/init -X POST > /dev/null 2>&1; then
+            echo "数据库初始化完成 ✓"
+            break
+        else
+            echo "等待服务启动... ($i/10)"
+            sleep 10
+        fi
+    done
+    
     # 检查服务状态
     check_service_status "docker"
     

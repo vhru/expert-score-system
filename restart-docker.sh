@@ -14,6 +14,15 @@ fi
 echo "停止所有相关容器..."
 docker-compose down || true
 
+# 清理可能冲突的容器
+echo "清理可能冲突的容器..."
+docker rm -f expert_review_mysql || true
+docker rm -f expert_review_app || true
+
+# 清理所有停止的容器
+echo "清理所有停止的容器..."
+docker container prune -f || true
+
 # 清理旧镜像（可选）
 echo "清理旧镜像..."
 docker system prune -f || true
@@ -53,6 +62,18 @@ docker-compose up -d --build
 # 等待服务启动
 echo "等待服务启动..."
 sleep 30
+
+# 初始化数据库（如果需要）
+echo "检查并初始化数据库..."
+for i in {1..10}; do
+    if curl -f http://localhost:3000/api/init -X POST > /dev/null 2>&1; then
+        echo "数据库初始化完成 ✓"
+        break
+    else
+        echo "等待服务启动... ($i/10)"
+        sleep 10
+    fi
+done
 
 # 检查服务状态
 echo "检查服务状态..."

@@ -406,9 +406,10 @@ export default function TeamRegisterPage() {
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="id_card">身份证</option>
-                        <option value="passport">护照</option>
+                        <option value="id_card">国内身份证</option>
+                        <option value="passport">外籍护照</option>
                       </select>
+                      <p className="mt-1 text-xs text-gray-500">请选择：国内身份证 或 外籍护照</p>
                     </div>
 
                     <div>

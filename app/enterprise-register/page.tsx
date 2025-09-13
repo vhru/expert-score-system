@@ -529,22 +529,20 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">国籍 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">国籍</label>
                       <input
                         type="text"
                         value={member.nationality}
                         onChange={(e) => handleCoreMemberChange(index, 'nationality', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">性别 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
                       <select
                         value={member.gender}
                         onChange={(e) => handleCoreMemberChange(index, 'gender', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">请选择</option>
@@ -554,12 +552,11 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">出生年月 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">出生年月</label>
                       <input
                         type="date"
                         value={member.birthDate}
                         onChange={(e) => handleCoreMemberChange(index, 'birthDate', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -572,9 +569,10 @@ export default function EnterpriseRegisterPage() {
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="id_card">身份证</option>
-                        <option value="passport">护照</option>
+                        <option value="id_card">国内身份证</option>
+                        <option value="passport">外籍护照</option>
                       </select>
+                      <p className="mt-1 text-xs text-gray-500">请选择：国内身份证 或 外籍护照</p>
                     </div>
 
                     <div>
@@ -589,12 +587,11 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">电话 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">电话</label>
                       <input
                         type="tel"
                         value={member.phone}
                         onChange={(e) => handleCoreMemberChange(index, 'phone', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -611,22 +608,20 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">毕业院校 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">毕业院校</label>
                       <input
                         type="text"
                         value={member.university}
                         onChange={(e) => handleCoreMemberChange(index, 'university', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">最高学历 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">最高学历</label>
                       <select
                         value={member.highestDegree}
                         onChange={(e) => handleCoreMemberChange(index, 'highestDegree', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">请选择</option>
@@ -638,23 +633,21 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">所在单位 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">所在单位</label>
                       <input
                         type="text"
                         value={member.organization}
                         onChange={(e) => handleCoreMemberChange(index, 'organization', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">职务/职称 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">职务/职称</label>
                       <input
                         type="text"
                         value={member.position}
                         onChange={(e) => handleCoreMemberChange(index, 'position', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
