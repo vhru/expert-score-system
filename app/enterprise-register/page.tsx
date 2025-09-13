@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useLanguage } from '@/lib/i18n';
+import LanguageSwitcherNew from '@/components/LanguageSwitcherNew';
+import { useLanguage } from '@/lib/language-context';
 
 interface CoreMember {
   name: string;
@@ -12,6 +12,7 @@ interface CoreMember {
   birthDate: string;
   idType: 'id_card' | 'passport';
   idNumber: string;
+  idPhoto?: File;
   phone: string;
   email: string;
   university: string;
@@ -31,8 +32,12 @@ export default function EnterpriseRegisterPage() {
   const [basicInfo, setBasicInfo] = useState({
     projectName: '',
     registrationCountry: '',
+    nationalityType: 'single',
+    selectedCountries: [] as string[],
+    nationalityOthers: '',
     projectBrief: '',
     projectStage: '',
+    projectStageOthers: '',
     password: '',
     confirmPassword: ''
   });
@@ -81,7 +86,8 @@ export default function EnterpriseRegisterPage() {
   const [documents, setDocuments] = useState({
     businessLicense: null as File | null,
     commitmentLetter: null as File | null,
-    businessPlan: null as File | null,
+    businessPlanChinese: null as File | null,
+    businessPlanEnglish: null as File | null,
     presentation: null as File | null,
     supplementaryMaterials: null as File | null
   });
@@ -108,6 +114,10 @@ export default function EnterpriseRegisterPage() {
   };
 
   const handleDocumentChange = (type: keyof typeof documents, file: File | null) => {
+    if (file && file.size > 5 * 1024 * 1024) {
+      setError('PDF文件大小不能超过5MB');
+      return;
+    }
     setDocuments(prev => ({ ...prev, [type]: file }));
   };
 
@@ -145,7 +155,8 @@ export default function EnterpriseRegisterPage() {
       // 文档上传
       if (documents.businessLicense) formData.append('businessLicense', documents.businessLicense);
       if (documents.commitmentLetter) formData.append('commitmentLetter', documents.commitmentLetter);
-      if (documents.businessPlan) formData.append('businessPlan', documents.businessPlan);
+      if (documents.businessPlanChinese) formData.append('businessPlanChinese', documents.businessPlanChinese);
+      if (documents.businessPlanEnglish) formData.append('businessPlanEnglish', documents.businessPlanEnglish);
       if (documents.presentation) formData.append('presentation', documents.presentation);
       if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
 
@@ -164,7 +175,7 @@ export default function EnterpriseRegisterPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert('企业注册成功！');
+        alert(t('enterpriseRegister.success'));
         router.push('/team-login');
       } else {
         setError(result.error || '注册失败');
@@ -185,10 +196,10 @@ export default function EnterpriseRegisterPage() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <a href="/portal" className="text-sm text-gray-600 hover:text-gray-800">
-                ← 返回系统首页
+                {t('common.back')} {t('portal.title')}
               </a>
             </div>
-            <LanguageSwitcher />
+            <LanguageSwitcherNew />
           </div>
         </div>
       </div>
@@ -196,8 +207,14 @@ export default function EnterpriseRegisterPage() {
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">澜湄国家科技创新大赛 - 企业组报名</h1>
-            <p className="mt-2 text-sm text-gray-600">Lancang-Mekong Countries Science and Technology Innovation Competition - Enterprise Registration</p>
+            {t('common.required') === '必填' ? (
+              <>
+                <h1 className="text-2xl font-bold text-gray-900">{t('enterpriseRegister.title')}</h1>
+                <p className="mt-2 text-sm text-gray-600">{t('enterpriseRegister.subtitle')}</p>
+              </>
+            ) : (
+              <h1 className="text-2xl font-bold text-gray-900">{t('enterpriseRegister.subtitle')}</h1>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
@@ -209,12 +226,12 @@ export default function EnterpriseRegisterPage() {
 
             {/* 1. 参赛项目信息 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">1. 参赛项目信息 / Project Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.projectInfo.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    项目名称 * / Project Name *
+                    {t('enterpriseRegister.projectInfo.projectName')} *
                   </label>
                   <input
                     type="text"
@@ -228,29 +245,117 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    企业注册国家 * / Registration Country *
+                    {t('enterpriseRegister.projectInfo.registrationCountry') + " *"}
                   </label>
-                  <select
-                    name="registrationCountry"
-                    value={basicInfo.registrationCountry}
-                    onChange={handleBasicInfoChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">请选择 / Please select</option>
-                    <option value="China">中国 / China</option>
-                    <option value="Thailand">泰国 / Thailand</option>
-                    <option value="Cambodia">柬埔寨 / Cambodia</option>
-                    <option value="Vietnam">越南 / Vietnam</option>
-                    <option value="Laos">老挝 / Laos</option>
-                    <option value="Myanmar">缅甸 / Myanmar</option>
-                  </select>
+                  
+                  {/* 国籍类型选择 */}
+                  <div className="mb-3">
+                    <div className="flex space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="nationalityType"
+                          value="single"
+                          checked={basicInfo.nationalityType === 'single'}
+                          onChange={handleBasicInfoChange}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">{t('enterpriseRegister.projectInfo.nationalityOptions.single')}</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="nationalityType"
+                          value="multiple"
+                          checked={basicInfo.nationalityType === 'multiple'}
+                          onChange={handleBasicInfoChange}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">{t('enterpriseRegister.projectInfo.nationalityOptions.multiple')}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 单一国家选择 */}
+                  {basicInfo.nationalityType === 'single' && (
+                    <select
+                      name="registrationCountry"
+                      value={basicInfo.registrationCountry}
+                      onChange={handleBasicInfoChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
+                      <option value="china">{t('enterpriseRegister.projectInfo.countries.china')}</option>
+                      <option value="thailand">{t('enterpriseRegister.projectInfo.countries.thailand')}</option>
+                      <option value="cambodia">{t('enterpriseRegister.projectInfo.countries.cambodia')}</option>
+                      <option value="vietnam">{t('enterpriseRegister.projectInfo.countries.vietnam')}</option>
+                      <option value="laos">{t('enterpriseRegister.projectInfo.countries.laos')}</option>
+                      <option value="myanmar">{t('enterpriseRegister.projectInfo.countries.myanmar')}</option>
+                      <option value="others">{t('enterpriseRegister.projectInfo.countries.others')}</option>
+                    </select>
+                  )}
+
+                  {/* 多国选择 */}
+                  {basicInfo.nationalityType === 'multiple' && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {['china', 'thailand', 'cambodia', 'vietnam', 'laos', 'myanmar'].map((country) => (
+                          <label key={country} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={basicInfo.selectedCountries.includes(country)}
+                              onChange={(e) => {
+                                const newCountries = e.target.checked
+                                  ? [...basicInfo.selectedCountries, country]
+                                  : basicInfo.selectedCountries.filter(c => c !== country);
+                                setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="text-sm">{t(`enterpriseRegister.projectInfo.countries.${country}`)}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={basicInfo.selectedCountries.includes('others')}
+                            onChange={(e) => {
+                              const newCountries = e.target.checked
+                                ? [...basicInfo.selectedCountries, 'others']
+                                : basicInfo.selectedCountries.filter(c => c !== 'others');
+                              setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{t('enterpriseRegister.projectInfo.countries.others')}</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Others文本框 */}
+                  {(basicInfo.registrationCountry === 'others' || basicInfo.selectedCountries.includes('others')) && (
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        name="nationalityOthers"
+                        value={basicInfo.nationalityOthers}
+                        onChange={handleBasicInfoChange}
+                        placeholder={t('common.required') === '必填' ? '请详细说明其他国籍' : 'Please specify other nationalities'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  项目简介 * / Project Brief * (500字以内)
+{t('enterpriseRegister.projectInfo.projectBrief')} * {t('common.required') === '必填' ? '(500字以内)' : '(within 500 words)'}
                 </label>
                 <textarea
                   name="projectBrief"
@@ -260,41 +365,62 @@ export default function EnterpriseRegisterPage() {
                   rows={4}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等"
+                   placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
                 <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  项目阶段 * / Project Stage *
+                  {t('enterpriseRegister.projectInfo.projectStage') + " *"}
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {['研发阶段', '实验室测试', '试生产', '批量生产及市场开发', '成长阶段'].map((stage) => (
-                    <label key={stage} className="flex items-center">
+                   {[
+                     { value: t('enterpriseRegister.projectInfo.stages.development'), label: t('enterpriseRegister.projectInfo.stages.development') },
+                     { value: t('enterpriseRegister.projectInfo.stages.labTest'), label: t('enterpriseRegister.projectInfo.stages.labTest') },
+                     { value: t('enterpriseRegister.projectInfo.stages.trialProduction'), label: t('enterpriseRegister.projectInfo.stages.trialProduction') },
+                     { value: t('enterpriseRegister.projectInfo.stages.batchProduction'), label: t('enterpriseRegister.projectInfo.stages.batchProduction') },
+                     { value: t('enterpriseRegister.projectInfo.stages.growth'), label: t('enterpriseRegister.projectInfo.stages.growth') },
+                     { value: t('enterpriseRegister.projectInfo.stages.others'), label: t('enterpriseRegister.projectInfo.stages.others') }
+                   ].map((stage) => (
+                    <label key={stage.value} className="flex items-center">
                       <input
                         type="radio"
                         name="projectStage"
-                        value={stage}
-                        checked={basicInfo.projectStage === stage}
+                        value={stage.value}
+                        checked={basicInfo.projectStage === stage.value}
                         onChange={handleBasicInfoChange}
                         className="mr-2"
                       />
-                      <span className="text-sm">{stage}</span>
+                      <span className="text-sm">{stage.label}</span>
                     </label>
                   ))}
                 </div>
+                {basicInfo.projectStage === t('enterpriseRegister.projectInfo.stages.others') && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      name="projectStageOthers"
+                      value={basicInfo.projectStageOthers}
+                      onChange={handleBasicInfoChange}
+                      placeholder={t('common.required') === '必填' ? '请详细说明项目阶段' : 'Please specify the project stage'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             {/* 2. 企业信息 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">2. 企业信息 / Enterprise Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.enterpriseInfo.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    企业名称 * / Enterprise Name *
+                    {t('enterpriseRegister.enterpriseInfo.enterpriseName') + " *"}
                   </label>
                   <input
                     type="text"
@@ -308,7 +434,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    统一社会信用代码 * / Unified Social Credit Code *
+                    {t('enterpriseRegister.enterpriseInfo.unifiedSocialCreditCode') + " *"}
                   </label>
                   <input
                     type="text"
@@ -322,7 +448,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    注册年份 * / Registration Year * (2019年后)
+{t('enterpriseRegister.enterpriseInfo.registrationYear')} *
                   </label>
                   <input
                     type="number"
@@ -338,7 +464,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    企业法定代表人 * / Legal Representative *
+                    {t('enterpriseRegister.enterpriseInfo.legalRepresentative') + " *"}
                   </label>
                   <input
                     type="text"
@@ -352,7 +478,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    总部所在地 * / Headquarters Location *
+                    {t('enterpriseRegister.enterpriseInfo.headquartersLocation') + " *"}
                   </label>
                   <input
                     type="text"
@@ -366,7 +492,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    注册资本 * / Registered Capital * (不超过450万美元)
+{t('enterpriseRegister.enterpriseInfo.registeredCapital')} *
                   </label>
                   <input
                     type="number"
@@ -381,7 +507,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    电话 * / Phone *
+                    {t('enterpriseRegister.enterpriseInfo.phone')} *
                   </label>
                   <input
                     type="tel"
@@ -395,7 +521,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    网站 / Website
+                    {t('enterpriseRegister.enterpriseInfo.website')}
                   </label>
                   <input
                     type="url"
@@ -409,7 +535,7 @@ export default function EnterpriseRegisterPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  企业简介 / Enterprise Overview (500字以内)
+                  {t('enterpriseRegister.enterpriseInfo.enterpriseOverview') + " (500字以内)"}
                 </label>
                 <textarea
                   name="enterpriseOverview"
@@ -425,12 +551,12 @@ export default function EnterpriseRegisterPage() {
 
             {/* 3. 项目联系人 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">3. 项目联系人 / Project Contact Person</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.contactInfo.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    姓名 * / Name *
+                    {t('enterpriseRegister.contactInfo.contactPersonName') + " *"}
                   </label>
                   <input
                     type="text"
@@ -444,35 +570,33 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    职务 * / Position *
+                    {t('enterpriseRegister.contactInfo.contactPersonPosition') + " *"}
                   </label>
                   <input
                     type="text"
                     name="contactPersonPosition"
                     value={contactInfo.contactPersonPosition}
                     onChange={handleContactInfoChange}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    电话 * / Phone *
+                    {t('enterpriseRegister.contactInfo.contactPersonPhone') + " *"}
                   </label>
                   <input
                     type="tel"
                     name="contactPersonPhone"
                     value={contactInfo.contactPersonPhone}
                     onChange={handleContactInfoChange}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    邮箱 * / Email *
+                    {t('enterpriseRegister.contactInfo.contactPersonEmail') + " *"}
                   </label>
                   <input
                     type="email"
@@ -489,14 +613,14 @@ export default function EnterpriseRegisterPage() {
             {/* 4. 核心成员信息 */}
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">4. 核心成员信息 / Core Team Members (至少3人，不超过6人)</h2>
+                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.coreMembers.title')}</h2>
                 {coreMembers.length < 6 && (
                   <button
                     type="button"
                     onClick={addCoreMember}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    添加成员
+                    {t('enterpriseRegister.coreMembers.addMember')}
                   </button>
                 )}
               </div>
@@ -504,21 +628,21 @@ export default function EnterpriseRegisterPage() {
               {coreMembers.map((member, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-gray-900">成员 {index + 1} / Member {index + 1}</h3>
+                     <h3 className="font-medium text-gray-900">{t('enterpriseRegister.coreMembers.member')} {index + 1}</h3>
                     {coreMembers.length > 3 && (
                       <button
                         type="button"
                         onClick={() => removeCoreMember(index)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        删除
+                        {t('enterpriseRegister.coreMembers.remove')}
                       </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.name') + " *"}</label>
                       <input
                         type="text"
                         value={member.name}
@@ -529,7 +653,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">国籍</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.nationality')}</label>
                       <input
                         type="text"
                         value={member.nationality}
@@ -539,20 +663,20 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.gender')}</label>
                       <select
                         value={member.gender}
                         onChange={(e) => handleCoreMemberChange(index, 'gender', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">请选择</option>
+                        <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
                         <option value="男">男</option>
                         <option value="女">女</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">出生年月</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.birthDate')}</label>
                       <input
                         type="date"
                         value={member.birthDate}
@@ -562,21 +686,21 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">证件类型 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.idType') + " *"}</label>
                       <select
                         value={member.idType}
                         onChange={(e) => handleCoreMemberChange(index, 'idType', e.target.value as 'id_card' | 'passport')}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="id_card">国内身份证</option>
-                        <option value="passport">外籍护照</option>
+                        <option value="id_card">{t('enterpriseRegister.coreMembers.idTypes.idCard')}</option>
+                        <option value="passport">{t('enterpriseRegister.coreMembers.idTypes.passport')}</option>
                       </select>
-                      <p className="mt-1 text-xs text-gray-500">请选择：国内身份证 或 外籍护照</p>
+                       <p className="mt-1 text-xs text-gray-500">{t('enterpriseRegister.coreMembers.idTypeInstructions')}</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">证件号码 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.idNumber') + " *"}</label>
                       <input
                         type="text"
                         value={member.idNumber}
@@ -587,7 +711,32 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">电话</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.idPhoto') + " *"}</label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 2 * 1024 * 1024) {
+                              setError('证件照文件大小不能超过2MB');
+                              return;
+                            }
+                            handleCoreMemberChange(index, 'idPhoto', file);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">{t('common.required') === '必填' ? '支持JPG、PNG格式，最大2MB' : 'Support JPG, PNG format, max 2MB'}</p>
+                      {member.idPhoto && (
+                        <p className="text-xs text-green-600 mt-1">
+                          已选择: {member.idPhoto.name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.phone')}</label>
                       <input
                         type="tel"
                         value={member.phone}
@@ -597,7 +746,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">电子邮箱 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.email') + " *"}</label>
                       <input
                         type="email"
                         value={member.email}
@@ -608,7 +757,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">毕业院校</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.university')}</label>
                       <input
                         type="text"
                         value={member.university}
@@ -618,22 +767,22 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">最高学历</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.highestDegree')}</label>
                       <select
                         value={member.highestDegree}
                         onChange={(e) => handleCoreMemberChange(index, 'highestDegree', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">请选择</option>
-                        <option value="本科">本科</option>
-                        <option value="硕士">硕士</option>
-                        <option value="博士">博士</option>
-                        <option value="其他">其他</option>
+                        <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
+                         <option value="本科">{t('enterpriseRegister.coreMembers.degrees.bachelor')}</option>
+                         <option value="硕士">{t('enterpriseRegister.coreMembers.degrees.master')}</option>
+                         <option value="博士">{t('enterpriseRegister.coreMembers.degrees.doctor')}</option>
+                         <option value="其他">{t('enterpriseRegister.coreMembers.degrees.other')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">所在单位</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.organization')}</label>
                       <input
                         type="text"
                         value={member.organization}
@@ -643,7 +792,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">职务/职称</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.position')}</label>
                       <input
                         type="text"
                         value={member.position}
@@ -653,7 +802,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">简历 (选填)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.cv')}</label>
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx"
@@ -668,12 +817,12 @@ export default function EnterpriseRegisterPage() {
 
             {/* 5. 文档上传 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">5. 需附材料清单 / Required Materials (全部为PDF格式)</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.documents.title')} {t('common.required') === '必填' ? '(全部为PDF格式)' : '(all as PDFs)'}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    营业执照扫描件 * / Business License *
+                    {t('enterpriseRegister.documents.businessLicense') + " *"}
                   </label>
                   <input
                     type="file"
@@ -686,7 +835,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    参赛承诺书 * / Commitment Letter *
+                    {t('enterpriseRegister.documents.commitmentLetter') + " *"}
                   </label>
                   <input
                     type="file"
@@ -697,22 +846,52 @@ export default function EnterpriseRegisterPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    商业计划书 * / Business Plan *
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleDocumentChange('businessPlan', e.target.files?.[0] || null)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                {t('common.required') === '必填' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('enterpriseRegister.documents.businessPlanChinese')} *
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentChange('businessPlanChinese', e.target.files?.[0] || null)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('enterpriseRegister.documents.businessPlanEnglish')} *
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentChange('businessPlanEnglish', e.target.files?.[0] || null)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('enterpriseRegister.documents.businessPlanEnglish')} *
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleDocumentChange('businessPlanEnglish', e.target.files?.[0] || null)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    演示文稿 * / Presentation *
+                    {t('enterpriseRegister.documents.presentation') + " *"}
                   </label>
                   <input
                     type="file"
@@ -725,7 +904,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    其他补充材料 / Supplementary Materials
+                    {t('enterpriseRegister.documents.supplementaryMaterials')}
                   </label>
                   <input
                     type="file"
@@ -739,12 +918,12 @@ export default function EnterpriseRegisterPage() {
 
             {/* 6. 登录密码 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">6. 登录密码 / Login Password</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.password.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    密码 * / Password *
+                    {t('enterpriseRegister.password.password') + " *"}
                   </label>
                   <input
                     type="password"
@@ -759,7 +938,7 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    确认密码 * / Confirm Password *
+                    {t('enterpriseRegister.password.confirmPassword') + " *"}
                   </label>
                   <input
                     type="password"
@@ -774,6 +953,13 @@ export default function EnterpriseRegisterPage() {
               </div>
             </div>
 
+            {/* 必填选填说明 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                {t('enterpriseRegister.requiredNote')}
+              </p>
+            </div>
+
             {/* 提交按钮 */}
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
@@ -781,14 +967,14 @@ export default function EnterpriseRegisterPage() {
                 onClick={() => router.push('/portal')}
                 className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? '提交中...' : '提交报名'}
+                 {loading ? t('enterpriseRegister.submitting') : t('enterpriseRegister.submit')}
               </button>
             </div>
           </form>

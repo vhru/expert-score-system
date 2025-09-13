@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useLanguage } from '@/lib/i18n';
+import LanguageSwitcherNew from '@/components/LanguageSwitcherNew';
+import { useLanguage } from '@/lib/language-context';
 
 interface CoreMember {
   name: string;
@@ -12,6 +12,7 @@ interface CoreMember {
   birthDate: string;
   idType: 'id_card' | 'passport';
   idNumber: string;
+  idPhoto?: File;
   phone: string;
   email: string;
   university: string;
@@ -31,8 +32,12 @@ export default function TeamRegisterPage() {
   const [basicInfo, setBasicInfo] = useState({
     projectName: '',
     coreMembersNationality: '',
+    nationalityType: 'single',
+    selectedCountries: [] as string[],
+    nationalityOthers: '',
     projectBrief: '',
     projectStage: '',
+    projectStageOthers: '',
     password: '',
     confirmPassword: ''
   });
@@ -62,7 +67,8 @@ export default function TeamRegisterPage() {
   // 文档上传
   const [documents, setDocuments] = useState({
     commitmentLetter: null as File | null,
-    technicalInfo: null as File | null,
+    technicalInfoChinese: null as File | null,
+    technicalInfoEnglish: null as File | null,
     presentation: null as File | null,
     supplementaryMaterials: null as File | null
   });
@@ -84,6 +90,10 @@ export default function TeamRegisterPage() {
   };
 
   const handleDocumentChange = (type: keyof typeof documents, file: File | null) => {
+    if (file && file.size > 5 * 1024 * 1024) {
+      setError('PDF文件大小不能超过5MB');
+      return;
+    }
     setDocuments(prev => ({ ...prev, [type]: file }));
   };
 
@@ -119,7 +129,8 @@ export default function TeamRegisterPage() {
 
       // 文档上传
       if (documents.commitmentLetter) formData.append('commitmentLetter', documents.commitmentLetter);
-      if (documents.technicalInfo) formData.append('technicalInfo', documents.technicalInfo);
+      if (documents.technicalInfoChinese) formData.append('technicalInfoChinese', documents.technicalInfoChinese);
+      if (documents.technicalInfoEnglish) formData.append('technicalInfoEnglish', documents.technicalInfoEnglish);
       if (documents.presentation) formData.append('presentation', documents.presentation);
       if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
 
@@ -138,7 +149,7 @@ export default function TeamRegisterPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert('团队注册成功！');
+        alert(t('teamRegister.success'));
         router.push('/team-login');
       } else {
         setError(result.error || '注册失败');
@@ -159,10 +170,10 @@ export default function TeamRegisterPage() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <a href="/portal" className="text-sm text-gray-600 hover:text-gray-800">
-                ← 返回系统首页
+                {t('common.back')} {t('portal.title')}
               </a>
             </div>
-            <LanguageSwitcher />
+            <LanguageSwitcherNew />
           </div>
         </div>
       </div>
@@ -170,8 +181,14 @@ export default function TeamRegisterPage() {
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow-lg rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">澜湄国家科技创新大赛 - 团队组报名</h1>
-            <p className="mt-2 text-sm text-gray-600">Lancang-Mekong Countries Science and Technology Innovation Competition - Team Registration</p>
+            {t('common.required') === '必填' ? (
+              <>
+                <h1 className="text-2xl font-bold text-gray-900">{t('teamRegister.title')}</h1>
+                <p className="mt-2 text-sm text-gray-600">{t('teamRegister.subtitle')}</p>
+              </>
+            ) : (
+              <h1 className="text-2xl font-bold text-gray-900">{t('teamRegister.subtitle')}</h1>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
@@ -183,12 +200,12 @@ export default function TeamRegisterPage() {
 
             {/* 1. 参赛项目信息 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">1. 参赛项目信息 / Project Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.projectInfo.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    项目名称 * / Project Name *
+                    {t('teamRegister.projectInfo.projectName') + " *"}
                   </label>
                   <input
                     type="text"
@@ -202,25 +219,117 @@ export default function TeamRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    核心成员国籍 * / Core Members Nationality *
+                    {t('teamRegister.projectInfo.coreMembersNationality') + " *"}
                   </label>
-                  <select
-                    name="coreMembersNationality"
-                    value={basicInfo.coreMembersNationality}
-                    onChange={handleBasicInfoChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">请选择 / Please select</option>
-                    <option value="single">单一国家 / Single Country</option>
-                    <option value="multiple">多国 / Multiple Countries</option>
-                  </select>
+                  
+                  {/* 国籍类型选择 */}
+                  <div className="mb-3">
+                    <div className="flex space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="nationalityType"
+                          value="single"
+                          checked={basicInfo.nationalityType === 'single'}
+                          onChange={handleBasicInfoChange}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">{t('teamRegister.projectInfo.nationalityOptions.single')}</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="nationalityType"
+                          value="multiple"
+                          checked={basicInfo.nationalityType === 'multiple'}
+                          onChange={handleBasicInfoChange}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">{t('teamRegister.projectInfo.nationalityOptions.multiple')}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 单一国家选择 */}
+                  {basicInfo.nationalityType === 'single' && (
+                    <select
+                      name="coreMembersNationality"
+                      value={basicInfo.coreMembersNationality}
+                      onChange={handleBasicInfoChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
+                      <option value="china">{t('teamRegister.projectInfo.countries.china')}</option>
+                      <option value="thailand">{t('teamRegister.projectInfo.countries.thailand')}</option>
+                      <option value="cambodia">{t('teamRegister.projectInfo.countries.cambodia')}</option>
+                      <option value="vietnam">{t('teamRegister.projectInfo.countries.vietnam')}</option>
+                      <option value="laos">{t('teamRegister.projectInfo.countries.laos')}</option>
+                      <option value="myanmar">{t('teamRegister.projectInfo.countries.myanmar')}</option>
+                      <option value="others">{t('teamRegister.projectInfo.countries.others')}</option>
+                    </select>
+                  )}
+
+                  {/* 多国选择 */}
+                  {basicInfo.nationalityType === 'multiple' && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {['china', 'thailand', 'cambodia', 'vietnam', 'laos', 'myanmar'].map((country) => (
+                          <label key={country} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={basicInfo.selectedCountries.includes(country)}
+                              onChange={(e) => {
+                                const newCountries = e.target.checked
+                                  ? [...basicInfo.selectedCountries, country]
+                                  : basicInfo.selectedCountries.filter(c => c !== country);
+                                setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="text-sm">{t(`teamRegister.projectInfo.countries.${country}`)}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={basicInfo.selectedCountries.includes('others')}
+                            onChange={(e) => {
+                              const newCountries = e.target.checked
+                                ? [...basicInfo.selectedCountries, 'others']
+                                : basicInfo.selectedCountries.filter(c => c !== 'others');
+                              setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{t('teamRegister.projectInfo.countries.others')}</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Others文本框 */}
+                  {(basicInfo.coreMembersNationality === 'others' || basicInfo.selectedCountries.includes('others')) && (
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        name="nationalityOthers"
+                        value={basicInfo.nationalityOthers}
+                        onChange={handleBasicInfoChange}
+                        placeholder={t('common.required') === '必填' ? '请详细说明其他国籍' : 'Please specify other nationalities'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  项目简介 * / Project Brief * (500字以内)
+{t('teamRegister.projectInfo.projectBrief')} * {t('common.required') === '必填' ? '(500字以内)' : '(within 500 words)'}
                 </label>
                 <textarea
                   name="projectBrief"
@@ -230,41 +339,61 @@ export default function TeamRegisterPage() {
                   rows={4}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等"
+                  placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
                 <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  项目阶段 * / Project Stage *
+                  {t('teamRegister.projectInfo.projectStage') + " *"}
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {['研发阶段', '实验室测试', '试生产', '成长阶段'].map((stage) => (
-                    <label key={stage} className="flex items-center">
+                  {[
+                    { value: t('teamRegister.projectInfo.stages.development'), label: t('teamRegister.projectInfo.stages.development') },
+                    { value: t('teamRegister.projectInfo.stages.labTest'), label: t('teamRegister.projectInfo.stages.labTest') },
+                    { value: t('teamRegister.projectInfo.stages.trialProduction'), label: t('teamRegister.projectInfo.stages.trialProduction') },
+                    { value: t('teamRegister.projectInfo.stages.growth'), label: t('teamRegister.projectInfo.stages.growth') },
+                    { value: t('teamRegister.projectInfo.stages.others'), label: t('teamRegister.projectInfo.stages.others') }
+                  ].map((stage) => (
+                    <label key={stage.value} className="flex items-center">
                       <input
                         type="radio"
                         name="projectStage"
-                        value={stage}
-                        checked={basicInfo.projectStage === stage}
+                        value={stage.value}
+                        checked={basicInfo.projectStage === stage.value}
                         onChange={handleBasicInfoChange}
                         className="mr-2"
                       />
-                      <span className="text-sm">{stage}</span>
+                      <span className="text-sm">{stage.label}</span>
                     </label>
                   ))}
                 </div>
+                {basicInfo.projectStage === t('teamRegister.projectInfo.stages.others') && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      name="projectStageOthers"
+                      value={basicInfo.projectStageOthers}
+                      onChange={handleBasicInfoChange}
+                      placeholder={t('common.required') === '必填' ? '请详细说明项目阶段' : 'Please specify the project stage'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             {/* 2. 项目联系人 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">2. 项目联系人 / Project Contact Person</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.contactInfo.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    姓名 * / Name *
+                    {t('teamRegister.contactInfo.contactPersonName') + " *"}
                   </label>
                   <input
                     type="text"
@@ -278,35 +407,33 @@ export default function TeamRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    职务 * / Position *
+                    {t('teamRegister.contactInfo.contactPersonPosition') + " *"}
                   </label>
                   <input
                     type="text"
                     name="contactPersonPosition"
                     value={contactInfo.contactPersonPosition}
                     onChange={handleContactInfoChange}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    电话 * / Phone *
+                    {t('teamRegister.contactInfo.contactPersonPhone') + " *"}
                   </label>
                   <input
                     type="tel"
                     name="contactPersonPhone"
                     value={contactInfo.contactPersonPhone}
                     onChange={handleContactInfoChange}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    邮箱 * / Email *
+                    {t('teamRegister.contactInfo.contactPersonEmail') + " *"}
                   </label>
                   <input
                     type="email"
@@ -323,14 +450,14 @@ export default function TeamRegisterPage() {
             {/* 3. 核心成员信息 */}
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">3. 核心成员信息 / Core Team Members (至少3人，不超过6人)</h2>
+                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.coreMembers.title')}</h2>
                 {coreMembers.length < 6 && (
                   <button
                     type="button"
                     onClick={addCoreMember}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    添加成员
+                    {t('teamRegister.coreMembers.addMember')}
                   </button>
                 )}
               </div>
@@ -338,21 +465,21 @@ export default function TeamRegisterPage() {
               {coreMembers.map((member, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-gray-900">成员 {index + 1} / Member {index + 1}</h3>
+                    <h3 className="font-medium text-gray-900">{t('teamRegister.coreMembers.member')} {index + 1}</h3>
                     {coreMembers.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeCoreMember(index)}
                         className="text-red-600 hover:text-red-800"
                       >
-                        删除
+                        {t('teamRegister.coreMembers.remove')}
                       </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.name') + " *"}</label>
                       <input
                         type="text"
                         value={member.name}
@@ -363,57 +490,54 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">国籍 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.nationality')}</label>
                       <input
                         type="text"
                         value={member.nationality}
                         onChange={(e) => handleCoreMemberChange(index, 'nationality', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">性别 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.gender')}</label>
                       <select
                         value={member.gender}
                         onChange={(e) => handleCoreMemberChange(index, 'gender', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">请选择</option>
+                        <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
                         <option value="男">男</option>
                         <option value="女">女</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">出生年月 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.birthDate')}</label>
                       <input
                         type="date"
                         value={member.birthDate}
                         onChange={(e) => handleCoreMemberChange(index, 'birthDate', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">证件类型 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.idType') + " *"}</label>
                       <select
                         value={member.idType}
                         onChange={(e) => handleCoreMemberChange(index, 'idType', e.target.value as 'id_card' | 'passport')}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="id_card">国内身份证</option>
-                        <option value="passport">外籍护照</option>
+                        <option value="id_card">{t('teamRegister.coreMembers.idTypes.idCard')}</option>
+                        <option value="passport">{t('teamRegister.coreMembers.idTypes.passport')}</option>
                       </select>
-                      <p className="mt-1 text-xs text-gray-500">请选择：国内身份证 或 外籍护照</p>
+                      <p className="mt-1 text-xs text-gray-500">{t('teamRegister.coreMembers.idTypeInstructions')}</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">证件号码 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.idNumber') + " *"}</label>
                       <input
                         type="text"
                         value={member.idNumber}
@@ -424,18 +548,42 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">电话 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.idPhoto') + " *"}</label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 2 * 1024 * 1024) {
+                              setError('证件照文件大小不能超过2MB');
+                              return;
+                            }
+                            handleCoreMemberChange(index, 'idPhoto', file);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">{t('common.required') === '必填' ? '支持JPG、PNG格式，最大2MB' : 'Support JPG, PNG format, max 2MB'}</p>
+                      {member.idPhoto && (
+                        <p className="text-xs text-green-600 mt-1">
+                          已选择: {member.idPhoto.name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.phone')}</label>
                       <input
                         type="tel"
                         value={member.phone}
                         onChange={(e) => handleCoreMemberChange(index, 'phone', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">电子邮箱 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.email') + " *"}</label>
                       <input
                         type="email"
                         value={member.email}
@@ -446,56 +594,52 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">毕业院校 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.university')}</label>
                       <input
                         type="text"
                         value={member.university}
                         onChange={(e) => handleCoreMemberChange(index, 'university', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">最高学历 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.highestDegree')}</label>
                       <select
                         value={member.highestDegree}
                         onChange={(e) => handleCoreMemberChange(index, 'highestDegree', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">请选择</option>
-                        <option value="本科">本科</option>
-                        <option value="硕士">硕士</option>
-                        <option value="博士">博士</option>
-                        <option value="其他">其他</option>
+                        <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
+                        <option value="{t('teamRegister.coreMembers.degrees.bachelor')}">{t('teamRegister.coreMembers.degrees.bachelor')}</option>
+                        <option value="{t('teamRegister.coreMembers.degrees.master')}">{t('teamRegister.coreMembers.degrees.master')}</option>
+                        <option value="{t('teamRegister.coreMembers.degrees.doctor')}">{t('teamRegister.coreMembers.degrees.doctor')}</option>
+                        <option value="{t('teamRegister.coreMembers.degrees.other')}">{t('teamRegister.coreMembers.degrees.other')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">所在单位 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.organization')}</label>
                       <input
                         type="text"
                         value={member.organization}
                         onChange={(e) => handleCoreMemberChange(index, 'organization', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">职务/职称 *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.position')}</label>
                       <input
                         type="text"
                         value={member.position}
                         onChange={(e) => handleCoreMemberChange(index, 'position', e.target.value)}
-                        required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">简历 (选填)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.cv')}</label>
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx"
@@ -510,12 +654,12 @@ export default function TeamRegisterPage() {
 
             {/* 4. 文档上传 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">4. 需附材料清单 / Required Materials (全部为PDF格式)</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.documents.title')} {t('common.required') === '必填' ? '(全部为PDF格式)' : '(all as PDFs)'}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    参赛承诺书 * / Commitment Letter *
+                    {t('teamRegister.documents.commitmentLetter') + " *"}
                   </label>
                   <input
                     type="file"
@@ -526,22 +670,52 @@ export default function TeamRegisterPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    项目技术可行性分析 * / Technical Feasibility Analysis *
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleDocumentChange('technicalInfo', e.target.files?.[0] || null)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                {t('common.required') === '必填' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('teamRegister.documents.technicalInfoChinese')} *
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentChange('technicalInfoChinese', e.target.files?.[0] || null)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('teamRegister.documents.technicalInfoEnglish')} *
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentChange('technicalInfoEnglish', e.target.files?.[0] || null)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('teamRegister.documents.technicalInfoEnglish')} *
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleDocumentChange('technicalInfoEnglish', e.target.files?.[0] || null)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    演示文稿 * / Presentation *
+                    {t('teamRegister.documents.presentation') + " *"}
                   </label>
                   <input
                     type="file"
@@ -554,7 +728,7 @@ export default function TeamRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    其他补充材料 / Supplementary Materials
+                    {t('teamRegister.documents.supplementaryMaterials')}
                   </label>
                   <input
                     type="file"
@@ -568,12 +742,12 @@ export default function TeamRegisterPage() {
 
             {/* 5. 登录密码 */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">5. 登录密码 / Login Password</h2>
+              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.password.title')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    密码 * / Password *
+                    {t('teamRegister.password.password') + " *"}
                   </label>
                   <input
                     type="password"
@@ -588,7 +762,7 @@ export default function TeamRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    确认密码 * / Confirm Password *
+                    {t('teamRegister.password.confirmPassword') + " *"}
                   </label>
                   <input
                     type="password"
@@ -603,6 +777,13 @@ export default function TeamRegisterPage() {
               </div>
             </div>
 
+            {/* 必填选填说明 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                {t('teamRegister.requiredNote')}
+              </p>
+            </div>
+
             {/* 提交按钮 */}
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
@@ -610,14 +791,14 @@ export default function TeamRegisterPage() {
                 onClick={() => router.push('/portal')}
                 className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? '提交中...' : '提交报名'}
+                {loading ? t('teamRegister.submitting') : t('teamRegister.submit')}
               </button>
             </div>
           </form>

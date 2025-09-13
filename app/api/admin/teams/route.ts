@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取所有团队及其评审状态
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     const teams = await dbOperations.teams.findAll();
     
     // 为每个团队添加评审状态信息

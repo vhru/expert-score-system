@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '请提供有效的团队ID和专家ID列表' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 检查团队是否存在
     const team = await dbOperations.teams.findById(teamId);

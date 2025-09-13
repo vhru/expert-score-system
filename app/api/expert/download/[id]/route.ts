@@ -27,7 +27,7 @@ export async function GET(
     }
 
     // 检查专家是否有权限下载这个文件
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     const assignments = await dbOperations.assignments.findByExpert(user.id);
     const hasPermission = assignments.some(assignment => assignment.file_id === fileId);
 

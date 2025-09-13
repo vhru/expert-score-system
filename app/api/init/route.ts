@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initDatabase } from '@/lib/simple-sqlite';
+import { initDatabase } from '@/lib/database-adapter';
 
 export async function POST(request: NextRequest) {
   try {

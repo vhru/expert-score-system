@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ error: '无效的图片ID' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 获取图片信息
     const image = await dbOperations.teamImages.findById(imageId);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbOperations } from '@/lib/simple-sqlite';
+import { dbOperations } from '@/lib/database-adapter';
 import { encryptData } from '@/lib/encryption';
 import bcrypt from 'bcryptjs';
 import { writeFile, mkdir } from 'fs/promises';
@@ -80,7 +80,12 @@ export async function POST(request: NextRequest) {
       encryptedInfo,
       true, // is_enterprise = true
       enterpriseInfo.enterpriseName,
-      enterpriseInfo.unifiedSocialCreditCode
+      enterpriseInfo.unifiedSocialCreditCode,
+      basicInfo.projectStage, // 项目阶段
+      basicInfo.projectStageOthers, // 其他项目阶段说明
+      basicInfo.nationalityType, // 国籍类型
+      JSON.stringify(basicInfo.selectedCountries), // 选择的国家（JSON格式）
+      basicInfo.nationalityOthers // 其他国籍说明
     );
 
     if (result.changes > 0) {

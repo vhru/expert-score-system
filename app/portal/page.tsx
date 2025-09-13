@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useLanguage } from '@/lib/i18n';
+import LanguageSwitcherNew from '@/components/LanguageSwitcherNew';
+import { useLanguage } from '@/lib/language-context';
 
 export default function PortalPage() {
   const [activeTab, setActiveTab] = useState('login');
@@ -17,14 +17,14 @@ export default function PortalPage() {
             <div className="flex items-center">
               <div className="text-2xl font-bold text-blue-600">🏆</div>
               <h1 className="ml-3 text-2xl font-bold text-gray-900">
-                专家盲审系统
+                {t('portal.title')}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">
                 安全 · 高效 · 公正
               </div>
-              <LanguageSwitcher />
+              <LanguageSwitcherNew />
             </div>
           </div>
         </div>
@@ -46,22 +46,22 @@ export default function PortalPage() {
           {/* 企业组专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="text-5xl mb-4">🏢</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">企业组 / Enterprise</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamSection.title')} / Enterprise</h3>
             <p className="text-sm text-gray-600 mb-4">
-              企业团队报名参赛，需提供商业计划书
+              {t('portal.teamSection.description')}
             </p>
             <div className="space-y-2">
               <a 
                 href="/enterprise-register" 
                 className="block w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm"
               >
-                企业报名
+{t('portal.teamSection.enterpriseRegister')}
               </a>
               <a 
                 href="/team-login" 
                 className="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm"
               >
-                企业登录
+{t('portal.teamSection.login')}
               </a>
             </div>
           </div>
@@ -69,22 +69,22 @@ export default function PortalPage() {
           {/* 团队组专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="text-5xl mb-4">👥</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">团队组 / Team</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamSection.title')} / Team</h3>
             <p className="text-sm text-gray-600 mb-4">
-              个人/小团队报名参赛，需提供技术可行性分析
+              {t('portal.teamSection.description')}
             </p>
             <div className="space-y-2">
               <a 
                 href="/team-register-new" 
                 className="block w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm"
               >
-                团队报名
+{t('portal.teamSection.teamRegister')}
               </a>
               <a 
                 href="/team-login" 
                 className="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm"
               >
-                团队登录
+{t('portal.teamSection.login')}
               </a>
             </div>
           </div>
@@ -92,19 +92,19 @@ export default function PortalPage() {
           {/* 专家专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="text-5xl mb-4">👨‍🎓</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">专家评审 / Expert</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.expertSection.title')} / Expert</h3>
             <p className="text-sm text-gray-600 mb-4">
-              专业评审人员，负责作品评审打分
+              {t('portal.expertSection.description')}
             </p>
             <div className="space-y-2">
               <a 
                 href="/expert-login" 
                 className="block w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm"
               >
-                专家登录
+{t('portal.expertSection.login')}
               </a>
               <div className="text-xs text-gray-500">
-                专家账号由管理员分配
+{t('portal.expertSection.note')}
               </div>
             </div>
           </div>
@@ -112,19 +112,19 @@ export default function PortalPage() {
           {/* 管理员专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="text-5xl mb-4">👨‍💼</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">系统管理 / Admin</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.adminSection.title')} / Admin</h3>
             <p className="text-sm text-gray-600 mb-4">
-              系统管理员，负责用户管理和评审分配
+              {t('portal.adminSection.description')}
             </p>
             <div className="space-y-2">
               <a 
                 href="/admin-login" 
                 className="block w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm"
               >
-                管理员登录
+{t('portal.adminSection.login')}
               </a>
               <div className="text-xs text-gray-500">
-                管理员权限账号
+{t('portal.adminSection.note')}
               </div>
             </div>
           </div>

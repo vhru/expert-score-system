@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '邮箱和密码不能为空' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 查找团队 - 使用邮箱查找
     const team = await dbOperations.teams.findByEmail(email);

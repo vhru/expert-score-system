@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     );
 
     // 更新文件状态为completed
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     await dbOperations.files.updateStatus(fileId, 'completed');
 
     return NextResponse.json({

@@ -247,8 +247,13 @@ export default function ExpertManagement({ token }: ExpertManagementProps) {
       const data = await response.json();
 
       if (data.success) {
-        setMessage(data.message);
-        setMessageType('success');
+        if (data.experts && data.experts.length > 0) {
+          setMessage(data.message);
+          setMessageType('success');
+        } else {
+          setMessage('没有有效的专家数据被创建');
+          setMessageType('error');
+        }
         setBatchExperts('');
         fetchExperts(); // 刷新专家列表
       } else {

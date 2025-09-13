@@ -32,7 +32,7 @@ export async function PUT(
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 检查用户名是否已被其他用户使用
     const existingUser = await dbOperations.users.findByUsername(username);
@@ -104,7 +104,7 @@ export async function DELETE(
       return NextResponse.json({ error: '无效的专家ID' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 检查是否有相关的评审任务
     const assignments = await dbOperations.assignments.findByExpert(expertId);

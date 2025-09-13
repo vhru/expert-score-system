@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       enterpriseLicense: enterpriseLicense ? enterpriseLicense.trim().substring(0, 100) : ''
     };
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 检查团队名称是否已存在
     const existingTeam = await dbOperations.teams.findByName(sanitizedData.teamName);

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 更新评审结果
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     const result = await dbOperations.assignments.updateScore(assignmentId, score, comments);
 
     if (result.changes > 0) {

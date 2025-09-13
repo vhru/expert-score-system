@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取专家的评审任务
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     const assignments = await dbOperations.assignments.findByExpert(user.id);
 
     return NextResponse.json({

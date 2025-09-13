@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取所有专家
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     const allUsers = await dbOperations.users.findAll();
     
     // 过滤出专家用户

@@ -40,6 +40,13 @@ interface Team {
   images?: TeamImage[];
   coreMembers?: CoreMember[];
   documents?: TeamDocument[];
+  teamInfo?: {
+    teamName: string;
+    contactPerson: string;
+    contactPhone: string;
+    contactEmail: string;
+    teamDescription: string;
+  };
   reviewCompletionStatus?: string; // 评审完成状态
   reviewStatus?: {
     totalAssignments: number;
@@ -159,6 +166,37 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
       }
     } catch (error) {
       console.error('Failed to download file:', error);
+    }
+  };
+
+  const handleResetPassword = async (team: Team) => {
+    const newPassword = prompt(`为团队 "${team.team_name}" 设置新密码:`);
+    if (!newPassword) return;
+
+    if (newPassword.length < 6) {
+      alert('密码长度至少6位');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/teams/${team.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      if (response.ok) {
+        alert(`密码重置成功！新密码: ${newPassword}`);
+      } else {
+        const error = await response.json();
+        alert(`密码重置失败: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      alert('密码重置失败');
     }
   };
 
@@ -385,6 +423,22 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                     <div>
                       <span className="text-gray-500">联系邮箱:</span>
                       <p className="font-medium">{selectedTeam.contact_email}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">登录账号:</span>
+                      <p className="font-medium text-blue-600">{selectedTeam.contact_email}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">登录密码:</span>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-red-600">已加密存储</p>
+                        <button
+                          onClick={() => handleResetPassword(selectedTeam)}
+                          className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                        >
+                          重置密码
+                        </button>
+                      </div>
                     </div>
                     <div>
                       <span className="text-gray-500">注册时间:</span>

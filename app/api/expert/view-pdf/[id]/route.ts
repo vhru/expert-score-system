@@ -23,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: '无效的文件ID' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/simple-sqlite');
+    const { dbOperations } = await import('@/lib/database-adapter');
     
     // 检查专家是否有权限查看此文件
     const assignment = await dbOperations.assignments.findByExpertAndFile(user.id, fileId);

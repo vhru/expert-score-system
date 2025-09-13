@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbOperations } from '@/lib/simple-sqlite';
+import { dbOperations } from '@/lib/database-adapter';
 import { encryptData } from '@/lib/encryption';
 import bcrypt from 'bcryptjs';
 import { writeFile, mkdir } from 'fs/promises';
@@ -77,7 +77,12 @@ export async function POST(request: NextRequest) {
       encryptedInfo,
       false, // is_enterprise = false
       '', // 企业名称为空
-      '' // 企业许可证为空
+      '', // 企业许可证为空
+      basicInfo.projectStage, // 项目阶段
+      basicInfo.projectStageOthers, // 其他项目阶段说明
+      basicInfo.nationalityType, // 国籍类型
+      JSON.stringify(basicInfo.selectedCountries), // 选择的国家（JSON格式）
+      basicInfo.nationalityOthers // 其他国籍说明
     );
 
     if (result.changes > 0) {

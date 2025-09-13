@@ -57,6 +57,11 @@ export async function initDatabase() {
           is_enterprise BOOLEAN DEFAULT 0,
           enterprise_name TEXT,
           enterprise_license TEXT,
+          project_stage TEXT,
+          project_stage_others TEXT,
+          nationality_type TEXT DEFAULT 'single' CHECK (nationality_type IN ('single', 'multiple')),
+          selected_countries TEXT,
+          nationality_others TEXT,
           status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -256,11 +261,11 @@ export const dbOperations = {
   
   // 团队操作
   teams: {
-    create: (teamName: string, password: string, contactEmail: string, encryptedInfo?: string, isEnterprise?: boolean, enterpriseName?: string, enterpriseLicense?: string): Promise<any> => {
+    create: (teamName: string, password: string, contactEmail: string, encryptedInfo?: string, isEnterprise?: boolean, enterpriseName?: string, enterpriseLicense?: string, projectStage?: string, projectStageOthers?: string, nationalityType?: string, selectedCountries?: string, nationalityOthers?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || ''],
+          'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license, project_stage, project_stage_others, nationality_type, selected_countries, nationality_others) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || '', projectStage || '', projectStageOthers || '', nationalityType || 'single', selectedCountries || '', nationalityOthers || ''],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });
@@ -302,6 +307,19 @@ export const dbOperations = {
           if (err) reject(err);
           else resolve(rows);
         });
+      });
+    },
+    
+    updatePassword: (id: number, password: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE teams SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [password, id],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
       });
     }
   },
