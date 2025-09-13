@@ -525,6 +525,16 @@ export async function initDatabase() {
       )
     `);
     
+    // 确保expert_type字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE users ADD COLUMN expert_type VARCHAR(20) DEFAULT 'team'`);
+    } catch (error) {
+      // 如果字段已存在，忽略错误
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add expert_type column:', error.message);
+      }
+    }
+    
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS teams (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -541,10 +551,47 @@ export async function initDatabase() {
         selected_countries TEXT,
         nationality_others TEXT,
         status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
+        audit_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+        audit_notes TEXT,
+        audited_at TIMESTAMP NULL,
+        audited_by VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+    
+    // 确保audit相关字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE teams ADD COLUMN audit_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add audit_status column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE teams ADD COLUMN audit_notes TEXT`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add audit_notes column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE teams ADD COLUMN audited_at TIMESTAMP NULL`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add audited_at column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE teams ADD COLUMN audited_by VARCHAR(100)`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add audited_by column:', error.message);
+      }
+    }
     
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS files (
@@ -608,12 +655,47 @@ export async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         team_id INT NOT NULL,
         document_type VARCHAR(100) NOT NULL,
+        document_name VARCHAR(255) NOT NULL,
         document_path VARCHAR(500) NOT NULL,
-        document_size INT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        file_size INT NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (team_id) REFERENCES teams(id)
       )
     `);
+    
+    // 确保team_documents表的字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE team_documents ADD COLUMN document_name VARCHAR(255) NOT NULL DEFAULT ''`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add document_name column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE team_documents ADD COLUMN file_size INT NOT NULL DEFAULT 0`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add file_size column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE team_documents ADD COLUMN mime_type VARCHAR(100) NOT NULL DEFAULT 'application/octet-stream'`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add mime_type column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE team_documents ADD COLUMN uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add uploaded_at column:', error.message);
+      }
+    }
     
     // 创建管理员用户
     const bcrypt = require('bcryptjs');
