@@ -28,6 +28,7 @@ export async function initDatabase() {
         password VARCHAR(255) NOT NULL,
         role ENUM('admin', 'expert') NOT NULL DEFAULT 'expert',
         encrypted_info TEXT,
+        expert_type VARCHAR(20) DEFAULT 'team',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
@@ -70,8 +71,8 @@ export async function initDatabase() {
     const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
     
     await connection.execute(`
-      INSERT IGNORE INTO users (username, password, role) 
-      VALUES (?, ?, 'admin')
+      INSERT IGNORE INTO users (username, password, role, expert_type) 
+      VALUES (?, ?, 'admin', 'admin')
     `, [process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword]);
 
     connection.release();

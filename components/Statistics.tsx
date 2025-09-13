@@ -13,7 +13,7 @@ export default function Statistics({ statistics }: StatisticsProps) {
     );
   }
 
-  const { assignments, files } = statistics;
+  const { assignments = {}, files = {} } = statistics;
 
   return (
     <div className="space-y-6">
@@ -29,11 +29,11 @@ export default function Statistics({ statistics }: StatisticsProps) {
         <h3 className="text-lg font-medium text-gray-900 mb-4">文件统计</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{files.total_files}</div>
+            <div className="text-2xl font-bold text-blue-600">{files.total_files || 0}</div>
             <div className="text-sm text-blue-800">总文件数</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{files.completed_files}</div>
+            <div className="text-2xl font-bold text-green-600">{files.completed_files || 0}</div>
             <div className="text-sm text-green-800">已完成上传</div>
           </div>
         </div>
@@ -44,19 +44,19 @@ export default function Statistics({ statistics }: StatisticsProps) {
         <h3 className="text-lg font-medium text-gray-900 mb-4">评审任务统计</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-gray-600">{assignments.total_assignments}</div>
+            <div className="text-2xl font-bold text-gray-600">{assignments.total_assignments || 0}</div>
             <div className="text-sm text-gray-800">总分配任务</div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">{assignments.pending_reviews}</div>
+            <div className="text-2xl font-bold text-yellow-600">{assignments.pending_reviews || 0}</div>
             <div className="text-sm text-yellow-800">待评审</div>
           </div>
           <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{assignments.in_progress_reviews}</div>
+            <div className="text-2xl font-bold text-blue-600">{assignments.in_progress_reviews || 0}</div>
             <div className="text-sm text-blue-800">评审中</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{assignments.completed_reviews}</div>
+            <div className="text-2xl font-bold text-green-600">{assignments.completed_reviews || 0}</div>
             <div className="text-sm text-green-800">已完成</div>
           </div>
         </div>

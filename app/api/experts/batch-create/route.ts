@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      results: results,
+      experts: results,
       errors: errors,
       message: `成功创建 ${results.length} 个专家，失败 ${errors.length} 个`
     });
