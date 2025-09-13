@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { dbOperations } from './simple-sqlite';
+import { dbOperations } from './database-adapter';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
 
