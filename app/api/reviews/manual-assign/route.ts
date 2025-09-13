@@ -22,10 +22,14 @@ export async function POST(request: NextRequest) {
 
     const { dbOperations } = await import('@/lib/database-adapter');
     
-    // 检查团队是否存在
+    // 检查团队是否存在且已审核通过
     const team = await dbOperations.teams.findById(teamId);
     if (!team) {
       return NextResponse.json({ error: '团队不存在' }, { status: 404 });
+    }
+    
+    if (team.audit_status !== 'approved') {
+      return NextResponse.json({ error: '只能为审核通过的团队分配评审任务' }, { status: 400 });
     }
 
     // 检查专家是否存在并验证类型匹配

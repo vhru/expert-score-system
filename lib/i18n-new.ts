@@ -81,6 +81,19 @@ export interface Translations {
         growth: string;
         others: string;
       };
+      nationalityOptions: {
+        single: string;
+        multiple: string;
+      };
+      countries: {
+        china: string;
+        thailand: string;
+        cambodia: string;
+        vietnam: string;
+        laos: string;
+        myanmar: string;
+        others: string;
+      };
     };
     enterpriseInfo: {
       title: string;
@@ -365,6 +378,19 @@ const zhTranslations: Translations = {
         growth: '成长阶段',
         others: '其他',
       },
+      nationalityOptions: {
+        single: '单一国家',
+        multiple: '多国',
+      },
+      countries: {
+        china: '中国',
+        thailand: '泰国',
+        cambodia: '柬埔寨',
+        vietnam: '越南',
+        laos: '老挝',
+        myanmar: '缅甸',
+        others: '其他',
+      },
     },
     enterpriseInfo: {
       title: '2. 企业信息',
@@ -639,6 +665,19 @@ const enTranslations: Translations = {
         trialProduction: 'Pilot test',
         batchProduction: 'Batch production and market development',
         growth: 'Growth',
+        others: 'Others',
+      },
+      nationalityOptions: {
+        single: 'Single Country',
+        multiple: 'Multiple Countries',
+      },
+      countries: {
+        china: 'China',
+        thailand: 'Thailand',
+        cambodia: 'Cambodia',
+        vietnam: 'Vietnam',
+        laos: 'Laos',
+        myanmar: 'Myanmar',
         others: 'Others',
       },
     },

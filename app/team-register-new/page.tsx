@@ -118,6 +118,39 @@ export default function TeamRegisterPage() {
     setLoading(true);
     setError('');
 
+    // 前端校验
+    if (!basicInfo.projectName.trim()) {
+      setError(t('common.required') === '必填' ? '项目名称不能为空' : 'Project name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!basicInfo.projectBrief.trim()) {
+      setError(t('common.required') === '必填' ? '项目简介不能为空' : 'Project brief is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!basicInfo.projectStage) {
+      setError(t('common.required') === '必填' ? '请选择项目阶段' : 'Please select project stage');
+      setLoading(false);
+      return;
+    }
+
+    if (!contactInfo.contactPersonName.trim()) {
+      setError(t('common.required') === '必填' ? '联系人姓名不能为空' : 'Contact person name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!contactInfo.contactPersonEmail.trim()) {
+      setError(t('common.required') === '必填' ? '联系人邮箱不能为空' : 'Contact person email is required');
+      setLoading(false);
+      return;
+    }
+
+    // 成员信息校验已移除 - 让后端处理数据验证
+
     try {
       const formData = new FormData();
       

@@ -31,12 +31,12 @@ services:
       - DB_PASSWORD=expert_password
       - JWT_SECRET=your_jwt_secret_key_here_change_in_production
       - AES_SECRET_KEY=your_aes_secret_key_32_chars_long
-      - UPLOAD_DIR=/app/uploads
+      - UPLOAD_DIR=/opt/team_data
       - MAX_FILE_SIZE=10485760
       - ADMIN_EMAIL=admin@example.com
       - ADMIN_PASSWORD=admin123
     volumes:
-      - ./uploads:/app/uploads
+      - /opt/team_data:/opt/team_data
     depends_on:
       - mysql
     restart: unless-stopped

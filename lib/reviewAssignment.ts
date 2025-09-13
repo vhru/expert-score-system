@@ -15,7 +15,7 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
   try {
     // 获取所有团队
     const allTeams = await dbOperations.teams.findAll();
-    const teams = allTeams.filter(t => t.status === 'active');
+    const teams = allTeams.filter(t => t.status === 'active' && t.audit_status === 'approved');
 
     // 获取所有专家
     const allUsers = await dbOperations.users.findAll();

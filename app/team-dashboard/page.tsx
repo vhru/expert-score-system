@@ -102,6 +102,55 @@ export default function TeamDashboard() {
     }
   };
 
+  const getDocumentTypeText = (documentType: string) => {
+    const typeMap: { [key: string]: string } = {
+      'commitmentLetter': '承诺书',
+      'presentation': '项目展示',
+      'supplementaryMaterials': '补充材料',
+      'technicalInfo': '技术信息',
+      'businessLicense': '营业执照',
+      'businessPlan': '商业计划书'
+    };
+    return typeMap[documentType] || documentType;
+  };
+
+  const handleDownloadDocument = async (submission: TeamSubmission) => {
+    try {
+      const token = localStorage.getItem('teamToken');
+      const response = await fetch(`/api/teams/download/${submission.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = submission.original_name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        setMessage('下载失败');
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      setMessage('下载失败');
+      setMessageType('error');
+    }
+  };
+
+  const handlePreviewDocument = (submission: TeamSubmission) => {
+    // 在新窗口中打开PDF预览
+    const token = localStorage.getItem('teamToken');
+    const url = `/api/teams/download/${submission.id}?preview=true`;
+    window.open(url, '_blank');
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -197,26 +246,60 @@ export default function TeamDashboard() {
                 </a>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {submissions.map((submission) => (
-                  <div key={submission.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
+                  <div key={submission.id} className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {submission.team_name || submission.original_name}
+                        <div className="flex items-center space-x-3 mb-3">
+                          <h3 className="text-xl font-semibold text-gray-900">
+                            {getDocumentTypeText(submission.document_type)}
                           </h3>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.upload_status)}`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(submission.upload_status)}`}>
                             {getStatusText(submission.upload_status)}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-500 space-y-1">
-                          <p>文件类型: {submission.mime_type}</p>
-                          <p>文件大小: {formatFileSize(submission.file_size)}</p>
-                          <p>提交时间: {new Date(submission.created_at).toLocaleString()}</p>
-                          <p>评审状态: {getReviewStatusText(submission)}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                          <div>
+                            <p><span className="font-medium">文件名:</span> {submission.original_name}</p>
+                            <p><span className="font-medium">文件类型:</span> {submission.mime_type}</p>
+                            <p><span className="font-medium">文件大小:</span> {formatFileSize(submission.file_size)}</p>
+                          </div>
+                          <div>
+                            <p><span className="font-medium">提交时间:</span> {new Date(submission.created_at).toLocaleString()}</p>
+                            <p><span className="font-medium">评审状态:</span> {getReviewStatusText(submission)}</p>
+                            <p><span className="font-medium">文档ID:</span> #{submission.id}</p>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={() => handleDownloadDocument(submission)}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        下载文档
+                      </button>
+                      
+                      <button
+                        onClick={() => handlePreviewDocument(submission)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        预览文档
+                      </button>
+                      
+                      <span className="text-xs text-gray-500">
+                        最后更新: {new Date(submission.updated_at).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 ))}

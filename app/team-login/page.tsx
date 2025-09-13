@@ -22,8 +22,8 @@ export default function TeamLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!loginForm.teamName.trim() || !loginForm.password) {
-      setMessage('请输入团队名称和密码');
+    if (!loginForm.email.trim() || !loginForm.password) {
+      setMessage('请输入邮箱和密码');
       setMessageType('error');
       return;
     }

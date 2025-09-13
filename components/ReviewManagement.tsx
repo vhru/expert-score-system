@@ -89,7 +89,9 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
       });
       const teamsData = await teamsResponse.json();
       if (teamsData.success) {
-        setAvailableTeams(teamsData.teams);
+        // 只显示审核通过的团队
+        const approvedTeams = teamsData.teams.filter((team: any) => team.audit_status === 'approved');
+        setAvailableTeams(approvedTeams);
       }
 
       // 获取可用专家

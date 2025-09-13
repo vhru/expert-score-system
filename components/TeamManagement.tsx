@@ -17,6 +17,7 @@ interface Team {
   enterprise_name?: string;
   enterprise_license?: string;
   status: string;
+  audit_status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;
   // 新增字段
@@ -119,7 +120,9 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
       });
       const data = await response.json();
       if (data.success) {
-        setTeams(data.teams);
+        // 只显示审核通过的团队
+        const approvedTeams = data.teams.filter((team: Team) => team.audit_status === 'approved');
+        setTeams(approvedTeams);
       }
     } catch (error) {
       console.error('Failed to fetch teams:', error);
@@ -166,6 +169,46 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
       }
     } catch (error) {
       console.error('Failed to download file:', error);
+    }
+  };
+
+  const handleDownloadZip = async (team: Team) => {
+    try {
+      const response = await fetch(`/api/admin/teams/${team.id}/download-zip`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '下载失败');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // 从响应头获取文件名，如果没有则使用默认名称
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let fileName = `${team.team_name}_${team.contact_email}_${team.is_enterprise ? '企业组' : '团队组'}.zip`;
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (fileNameMatch) {
+          fileName = decodeURIComponent(fileNameMatch[1]);
+        }
+      }
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('ZIP下载错误:', error);
+      alert(`ZIP下载失败: ${error.message}`);
     }
   };
 
@@ -364,6 +407,12 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                       查看详情
                     </button>
                     <button
+                      onClick={() => handleDownloadZip(team)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium"
+                    >
+                      📦 下载ZIP
+                    </button>
+                    <button
                       onClick={() => handleDownloadFile(team)}
                       className="btn-primary text-sm"
                     >
@@ -542,6 +591,12 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                   className="btn-secondary"
                 >
                   关闭
+                </button>
+                <button
+                  onClick={() => handleDownloadZip(selectedTeam)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium"
+                >
+                  📦 下载ZIP包
                 </button>
                 <button
                   onClick={() => handleDownloadFile(selectedTeam)}

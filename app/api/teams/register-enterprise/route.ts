@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '核心成员数量必须在3-6人之间' }, { status: 400 });
     }
 
-    // 验证所有核心成员信息
+    // 验证所有核心成员信息 - 只检查最基本的必填项
     for (let i = 0; i < coreMembers.length; i++) {
       const member = coreMembers[i];
-      if (!member.name || !member.nationality || !member.email) {
+      if (!member.name || !member.email) {
         return NextResponse.json({ error: `成员${i + 1}信息不完整` }, { status: 400 });
       }
     }
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         const cvFile = formData.get(`memberCv_${i}`) as File;
         if (cvFile) {
           try {
-            const uploadDir = path.join(process.cwd(), 'uploads', 'member-cvs');
+            const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'member-cvs');
             await mkdir(uploadDir, { recursive: true });
             const fileExtension = path.extname(cvFile.name);
             const fileName = `${teamId}_member_${i + 1}_${Date.now()}${fileExtension}`;
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
         const file = formData.get(docType) as File;
         if (file) {
           try {
-            const uploadDir = path.join(process.cwd(), 'uploads', 'team-documents');
+            const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents');
             await mkdir(uploadDir, { recursive: true });
             const fileExtension = path.extname(file.name);
             const fileName = `${teamId}_${docType}_${Date.now()}${fileExtension}`;

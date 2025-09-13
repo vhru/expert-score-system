@@ -14,10 +14,11 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ user, token, onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState('teams');
+  const [activeTab, setActiveTab] = useState('audit');
   const [statistics, setStatistics] = useState(null);
 
   const tabs = [
+    { id: 'audit', name: '团队审核', icon: '🔍' },
     { id: 'teams', name: '团队管理', icon: '🏆' },
     { id: 'experts', name: '专家管理', icon: '👥' },
     { id: 'reviews', name: '评审管理', icon: '📝' },
@@ -85,6 +86,18 @@ export default function AdminDashboard({ user, token, onLogout }: AdminDashboard
 
         {/* Tab Content */}
         <div className="p-6">
+          {activeTab === 'audit' && (
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">团队审核管理</h3>
+              <p className="text-gray-600 mb-6">审核团队注册信息和提交的文档</p>
+              <a
+                href="/admin-audit"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                进入审核页面
+              </a>
+            </div>
+          )}
           {activeTab === 'teams' && (
             <TeamManagement token={token} onUpdate={fetchStatistics} />
           )}

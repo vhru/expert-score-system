@@ -32,9 +32,6 @@ export default function EnterpriseRegisterPage() {
   const [basicInfo, setBasicInfo] = useState({
     projectName: '',
     registrationCountry: '',
-    nationalityType: 'single',
-    selectedCountries: [] as string[],
-    nationalityOthers: '',
     projectBrief: '',
     projectStage: '',
     projectStageOthers: '',
@@ -142,6 +139,81 @@ export default function EnterpriseRegisterPage() {
     setLoading(true);
     setError('');
 
+    // 前端校验
+    if (!basicInfo.projectName.trim()) {
+      setError(t('common.required') === '必填' ? '项目名称不能为空' : 'Project name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!basicInfo.projectBrief.trim()) {
+      setError(t('common.required') === '必填' ? '项目简介不能为空' : 'Project brief is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!basicInfo.projectStage) {
+      setError(t('common.required') === '必填' ? '请选择项目阶段' : 'Please select project stage');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.enterpriseName.trim()) {
+      setError(t('common.required') === '必填' ? '企业名称不能为空' : 'Enterprise name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.unifiedSocialCreditCode.trim()) {
+      setError(t('common.required') === '必填' ? '统一社会信用代码不能为空' : 'Unified social credit code is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.registrationYear.trim()) {
+      setError(t('common.required') === '必填' ? '注册年份不能为空' : 'Registration year is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.legalRepresentative.trim()) {
+      setError(t('common.required') === '必填' ? '法定代表人不能为空' : 'Legal representative is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.headquartersLocation.trim()) {
+      setError(t('common.required') === '必填' ? '总部所在地不能为空' : 'Headquarters location is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.registeredCapitalUsd.trim()) {
+      setError(t('common.required') === '必填' ? '注册资本不能为空' : 'Registered capital is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!enterpriseInfo.phone.trim()) {
+      setError(t('common.required') === '必填' ? '企业电话不能为空' : 'Enterprise phone is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!contactInfo.contactPersonName.trim()) {
+      setError(t('common.required') === '必填' ? '联系人姓名不能为空' : 'Contact person name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!contactInfo.contactPersonEmail.trim()) {
+      setError(t('common.required') === '必填' ? '联系人邮箱不能为空' : 'Contact person email is required');
+      setLoading(false);
+      return;
+    }
+
+    // 成员信息校验已移除 - 让后端处理数据验证
+
     try {
       const formData = new FormData();
       
@@ -248,108 +320,22 @@ export default function EnterpriseRegisterPage() {
                     {t('enterpriseRegister.projectInfo.registrationCountry') + " *"}
                   </label>
                   
-                  {/* 国籍类型选择 */}
-                  <div className="mb-3">
-                    <div className="flex space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="nationalityType"
-                          value="single"
-                          checked={basicInfo.nationalityType === 'single'}
-                          onChange={handleBasicInfoChange}
-                          className="mr-2"
-                        />
-                        <span className="text-sm">{t('enterpriseRegister.projectInfo.nationalityOptions.single')}</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="nationalityType"
-                          value="multiple"
-                          checked={basicInfo.nationalityType === 'multiple'}
-                          onChange={handleBasicInfoChange}
-                          className="mr-2"
-                        />
-                        <span className="text-sm">{t('enterpriseRegister.projectInfo.nationalityOptions.multiple')}</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* 单一国家选择 */}
-                  {basicInfo.nationalityType === 'single' && (
-                    <select
-                      name="registrationCountry"
-                      value={basicInfo.registrationCountry}
-                      onChange={handleBasicInfoChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
-                      <option value="china">{t('enterpriseRegister.projectInfo.countries.china')}</option>
-                      <option value="thailand">{t('enterpriseRegister.projectInfo.countries.thailand')}</option>
-                      <option value="cambodia">{t('enterpriseRegister.projectInfo.countries.cambodia')}</option>
-                      <option value="vietnam">{t('enterpriseRegister.projectInfo.countries.vietnam')}</option>
-                      <option value="laos">{t('enterpriseRegister.projectInfo.countries.laos')}</option>
-                      <option value="myanmar">{t('enterpriseRegister.projectInfo.countries.myanmar')}</option>
-                      <option value="others">{t('enterpriseRegister.projectInfo.countries.others')}</option>
-                    </select>
-                  )}
-
-                  {/* 多国选择 */}
-                  {basicInfo.nationalityType === 'multiple' && (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {['china', 'thailand', 'cambodia', 'vietnam', 'laos', 'myanmar'].map((country) => (
-                          <label key={country} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={basicInfo.selectedCountries.includes(country)}
-                              onChange={(e) => {
-                                const newCountries = e.target.checked
-                                  ? [...basicInfo.selectedCountries, country]
-                                  : basicInfo.selectedCountries.filter(c => c !== country);
-                                setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
-                              }}
-                              className="mr-2"
-                            />
-                            <span className="text-sm">{t(`enterpriseRegister.projectInfo.countries.${country}`)}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div className="mt-2">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={basicInfo.selectedCountries.includes('others')}
-                            onChange={(e) => {
-                              const newCountries = e.target.checked
-                                ? [...basicInfo.selectedCountries, 'others']
-                                : basicInfo.selectedCountries.filter(c => c !== 'others');
-                              setBasicInfo(prev => ({ ...prev, selectedCountries: newCountries }));
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm">{t('enterpriseRegister.projectInfo.countries.others')}</span>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Others文本框 */}
-                  {(basicInfo.registrationCountry === 'others' || basicInfo.selectedCountries.includes('others')) && (
-                    <div className="mt-3">
-                      <input
-                        type="text"
-                        name="nationalityOthers"
-                        value={basicInfo.nationalityOthers}
-                        onChange={handleBasicInfoChange}
-                        placeholder={t('common.required') === '必填' ? '请详细说明其他国籍' : 'Please specify other nationalities'}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                  )}
+                  <select
+                    name="registrationCountry"
+                    value={basicInfo.registrationCountry}
+                    onChange={handleBasicInfoChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
+                    <option value="china">{t('enterpriseRegister.projectInfo.countries.china')}</option>
+                    <option value="thailand">{t('enterpriseRegister.projectInfo.countries.thailand')}</option>
+                    <option value="cambodia">{t('enterpriseRegister.projectInfo.countries.cambodia')}</option>
+                    <option value="vietnam">{t('enterpriseRegister.projectInfo.countries.vietnam')}</option>
+                    <option value="laos">{t('enterpriseRegister.projectInfo.countries.laos')}</option>
+                    <option value="myanmar">{t('enterpriseRegister.projectInfo.countries.myanmar')}</option>
+                    <option value="others">{t('enterpriseRegister.projectInfo.countries.others')}</option>
+                  </select>
                 </div>
               </div>
 

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 创建上传目录
-    const uploadDir = path.join(process.cwd(), 'uploads', 'photos');
+    const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'photos');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }

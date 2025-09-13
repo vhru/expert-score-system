@@ -321,6 +321,19 @@ export const dbOperations = {
           }
         );
       });
+    },
+    
+    updateAuditStatus: (id: number, status: string, notes: string, auditedBy: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE teams SET audit_status = ?, audit_notes = ?, audited_at = CURRENT_TIMESTAMP, audited_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [status, notes, auditedBy, id],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
+      });
     }
   },
   

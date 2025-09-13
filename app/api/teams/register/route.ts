@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         if (imageFile) {
           try {
             // 创建上传目录
-            const uploadDir = path.join(process.cwd(), 'uploads', 'team-images');
+            const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images');
             await mkdir(uploadDir, { recursive: true });
             
             // 生成唯一文件名

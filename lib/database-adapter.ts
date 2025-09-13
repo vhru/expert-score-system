@@ -129,6 +129,15 @@ const mysqlOperations = {
         [password, id]
       );
       return result;
+    },
+    
+    async updateAuditStatus(id: number, status: string, notes: string, auditedBy: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute(
+        'UPDATE teams SET audit_status = ?, audit_notes = ?, audited_at = CURRENT_TIMESTAMP, audited_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [status, notes, auditedBy, id]
+      );
+      return result;
     }
   },
   
@@ -356,6 +365,14 @@ export const dbOperations = {
         return await mysqlOperations.teams.updatePassword(id, password);
       } else {
         return sqliteOperations.teams.updatePassword(id, password);
+      }
+    },
+    
+    async updateAuditStatus(id: number, status: string, notes: string, auditedBy: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.teams.updateAuditStatus(id, status, notes, auditedBy);
+      } else {
+        return sqliteOperations.teams.updateAuditStatus(id, status, notes, auditedBy);
       }
     }
   },
