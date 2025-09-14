@@ -93,19 +93,12 @@ export async function POST(request: NextRequest) {
         const member = coreMembers[i];
         await dbOperations.coreMembers.create(
           teamId,
-          i + 1,
           member.name,
+          member.position,
           member.nationality,
-          member.gender,
-          member.birthDate,
           member.idType,
           encryptData(member.idNumber), // 加密身份证号
-          encryptData(member.phone), // 加密电话号码
-          member.email,
-          member.university,
-          member.highestDegree,
-          member.organization,
-          member.position
+          undefined // cvPath 将在后面处理
         );
 
         // 保存成员CV
@@ -121,8 +114,7 @@ export async function POST(request: NextRequest) {
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
 
-            // 更新成员记录中的CV路径
-            await dbOperations.coreMembers.updateCvPath(teamId, i + 1, filePath);
+            // CV文件已保存，路径将在图片处理中记录
           } catch (error) {
             console.error(`Failed to save CV for member ${i + 1}:`, error);
           }
