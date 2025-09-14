@@ -84,7 +84,7 @@ export async function GET(
     // 直接扫描团队文件夹，不需要数据库查询
     const teamName = team.team_name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
     const contactEmail = team.contact_email.replace(/[^a-zA-Z0-9@.-]/g, '_');
-    const teamFolder = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${teamName}_${contactEmail}_${teamTypeSuffix}`);
+    const teamFolder = path.join('/opt/team_data', `${teamName}_${contactEmail}_${teamTypeSuffix}`);
     
     console.log('扫描团队文件夹:', teamFolder);
     

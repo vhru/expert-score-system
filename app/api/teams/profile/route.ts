@@ -32,12 +32,18 @@ export async function GET(request: NextRequest) {
 
     // 获取核心成员信息
     const coreMembers = await dbOperations.coreMembers.findByTeam(decoded.id);
+    
+    console.log('👥 获取团队信息调试:');
+    console.log('   团队ID:', decoded.id);
+    console.log('   团队名称:', team.team_name);
+    console.log('   核心成员数量:', coreMembers ? coreMembers.length : 0);
+    console.log('   核心成员数据:', coreMembers);
 
     return NextResponse.json({
       success: true,
       team: {
         ...team,
-        core_members: coreMembers
+        core_members: coreMembers || []
       }
     });
 

@@ -169,9 +169,16 @@ export default function TeamRegisterPage() {
             contactPersonEmail: decryptedInfo.contactPersonEmail || ''
           });
           
-          // 设置核心成员信息
-          if (decryptedInfo.coreMembers && Array.isArray(decryptedInfo.coreMembers)) {
+          // 设置核心成员信息 - 优先使用数据库数据
+          if (team.core_members && Array.isArray(team.core_members) && team.core_members.length > 0) {
+            console.log('使用数据库核心成员数据:', team.core_members);
+            setCoreMembers(team.core_members);
+          } else if (decryptedInfo.coreMembers && Array.isArray(decryptedInfo.coreMembers)) {
+            console.log('使用解密的核心成员数据:', decryptedInfo.coreMembers);
             setCoreMembers(decryptedInfo.coreMembers);
+          } else {
+            console.log('没有找到核心成员数据');
+            setCoreMembers([]);
           }
         }
       }
