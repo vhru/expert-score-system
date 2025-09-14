@@ -41,13 +41,21 @@ export async function GET(
     }
 
     // 读取文件 - 修复路径问题
-    let filePath;
-    if (document.document_path.startsWith('/')) {
-      // 绝对路径
-      filePath = document.document_path;
-    } else {
-      // 相对路径
-      filePath = path.join(process.cwd(), document.document_path);
+    let filePath = document.document_path;
+    
+    // 如果路径包含 /app/uploads/，替换为 /opt/team_data/
+    if (filePath.includes('/app/uploads/')) {
+      filePath = filePath.replace('/app/uploads/', '/opt/team_data/');
+    }
+    
+    // 如果路径包含 /uploads/，替换为 /opt/team_data/
+    if (filePath.includes('/uploads/')) {
+      filePath = filePath.replace('/uploads/', '/opt/team_data/');
+    }
+    
+    // 如果不是绝对路径，使用当前工作目录
+    if (!path.isAbsolute(filePath)) {
+      filePath = path.join(process.cwd(), filePath);
     }
     
     console.log('Downloading file from:', filePath);

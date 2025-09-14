@@ -694,6 +694,8 @@ export default function TeamRegisterPage() {
                       />
                     </div>
 
+                    {/* 更新模式下隐藏证件照上传 */}
+                    {!isUpdateMode && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.idPhoto') + " *"}</label>
                       <input
@@ -718,6 +720,7 @@ export default function TeamRegisterPage() {
                         </p>
                       )}
                     </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.phone')}</label>

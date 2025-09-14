@@ -324,6 +324,15 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM team_images WHERE team_id = ?', [teamId]);
       return rows;
+    },
+    
+    async update(id: number, imagePath: string, imageSize: number, imageName?: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute(
+        'UPDATE team_images SET image_path = ?, image_size = ?, image_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [imagePath, imageSize, imageName || '', id]
+      );
+      return result;
     }
   },
   
@@ -630,6 +639,14 @@ export const dbOperations = {
         return await mysqlOperations.teamImages.findByTeam(teamId);
       } else {
         return sqliteOperations.teamImages.findByTeam(teamId);
+      }
+    },
+    
+    async update(id: number, imagePath: string, imageSize: number, imageName?: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamImages.update(id, imagePath, imageSize, imageName);
+      } else {
+        return sqliteOperations.teamImages.update(id, imagePath, imageSize, imageName);
       }
     }
   },

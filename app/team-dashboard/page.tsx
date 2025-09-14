@@ -348,7 +348,8 @@ export default function TeamDashboard() {
                     </div>
                     
                     <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
-                      <button
+                      {/* 暂时隐藏下载按钮，专注更新功能 */}
+                      {/* <button
                         onClick={() => handleDownloadDocument(submission)}
                         className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
@@ -356,7 +357,7 @@ export default function TeamDashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         {t[language].download}
-                      </button>
+                      </button> */}
                       
                       <button
                         onClick={() => handleUpdateDocument(submission)}
@@ -408,7 +409,8 @@ export default function TeamDashboard() {
                         </p>
                       </div>
                       <div className="flex space-x-2 ml-4">
-                        <button
+                        {/* 暂时隐藏下载按钮，专注更新功能 */}
+                        {/* <button
                           onClick={() => {
                             const token = localStorage.getItem('teamToken');
                             window.open(`/api/teams/download-image/${image.id}?token=${token}`, '_blank');
@@ -416,7 +418,7 @@ export default function TeamDashboard() {
                           className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
                         >
                           {t[language].download}
-                        </button>
+                        </button> */}
                         <button
                           onClick={() => window.open(`/team-update-image/${image.id}`, '_blank')}
                           className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200"

@@ -46,14 +46,22 @@ export async function GET(
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 
-    // 构建文件路径
-    let filePath;
-    if (image.image_path.startsWith('uploads/')) {
-      filePath = path.join(process.cwd(), image.image_path);
-    } else if (path.isAbsolute(image.image_path)) {
-      filePath = image.image_path;
-    } else {
-      filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', image.image_path);
+    // 构建文件路径 - 修复路径问题
+    let filePath = image.image_path;
+    
+    // 如果路径包含 /app/uploads/，替换为 /opt/team_data/
+    if (filePath.includes('/app/uploads/')) {
+      filePath = filePath.replace('/app/uploads/', '/opt/team_data/');
+    }
+    
+    // 如果路径包含 /uploads/，替换为 /opt/team_data/
+    if (filePath.includes('/uploads/')) {
+      filePath = filePath.replace('/uploads/', '/opt/team_data/');
+    }
+    
+    // 如果不是绝对路径，使用当前工作目录
+    if (!path.isAbsolute(filePath)) {
+      filePath = path.join(process.cwd(), filePath);
     }
     
     // 检查文件是否存在
