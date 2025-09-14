@@ -266,6 +266,29 @@ const mysqlOperations = {
         FROM review_assignments
       `);
       return rows[0];
+    },
+    
+    async findAll() {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute(`
+        SELECT 
+          ra.id,
+          ra.file_id,
+          ra.expert_id,
+          ra.assignment_status,
+          ra.score,
+          ra.comments,
+          ra.created_at,
+          ra.updated_at,
+          f.original_name,
+          f.team_name,
+          u.username as expert_name
+        FROM review_assignments ra
+        JOIN files f ON ra.file_id = f.id
+        JOIN users u ON ra.expert_id = u.id
+        ORDER BY ra.created_at DESC
+      `);
+      return rows;
     }
   },
   
@@ -320,6 +343,12 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM team_documents WHERE team_id = ?', [teamId]);
       return rows;
+    },
+    
+    async findById(id: number) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute('SELECT * FROM team_documents WHERE id = ?', [id]);
+      return Array.isArray(rows) ? rows[0] : null;
     }
   }
 };
@@ -522,6 +551,14 @@ export const dbOperations = {
       } else {
         return sqliteOperations.assignments.getStatistics();
       }
+    },
+    
+    async findAll() {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.findAll();
+      } else {
+        return sqliteOperations.assignments.findAll();
+      }
     }
   },
   
@@ -575,6 +612,14 @@ export const dbOperations = {
         return await mysqlOperations.teamDocuments.findByTeam(teamId);
       } else {
         return sqliteOperations.teamDocuments.findByTeam(teamId);
+      }
+    },
+    
+    async findById(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamDocuments.findById(id);
+      } else {
+        return sqliteOperations.teamDocuments.findById(id);
       }
     }
   },

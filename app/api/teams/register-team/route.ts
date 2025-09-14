@@ -132,7 +132,8 @@ export async function POST(request: NextRequest) {
       // 保存文档
       const documentTypes = [
         'commitmentLetter', 
-        'technicalInfo',
+        'technicalInfoChinese',
+        'technicalInfoEnglish',
         'presentation',
         'supplementaryMaterials'
       ];
@@ -144,11 +145,14 @@ export async function POST(request: NextRequest) {
         if (file) {
           console.log(`📄 处理文档: ${docType}, 文件名: ${file.name}, 大小: ${file.size}`);
           try {
-            const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents');
-            await mkdir(uploadDir, { recursive: true });
+            // 为每个团队创建单独的子文件夹
+            const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', `team_${teamId}`);
+            await mkdir(teamDir, { recursive: true });
             const fileExtension = path.extname(file.name);
-            const fileName = `${teamId}_${docType}_${Date.now()}${fileExtension}`;
-            const filePath = path.join(uploadDir, fileName);
+            // 文件名包含团队ID、文档类型、邮箱前缀和时间戳
+            const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
+            const fileName = `${teamId}_${emailPrefix}_${docType}_${Date.now()}${fileExtension}`;
+            const filePath = path.join(teamDir, fileName);
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
@@ -174,11 +178,51 @@ export async function POST(request: NextRequest) {
       }
       console.log(`✅ 文档处理完成，共处理 ${documentResults.length} 个文档`);
 
+      // 处理图片上传
+      const imageResults = [];
+      console.log('🖼️ 开始处理图片上传...');
+      for (let i = 0; i < 5; i++) {
+        const imageFile = formData.get(`image_${i}`) as File;
+        if (imageFile) {
+          console.log(`📷 处理图片: image_${i}, 文件名: ${imageFile.name}, 大小: ${imageFile.size}`);
+          try {
+            // 为每个团队创建单独的子文件夹
+            const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', `team_${teamId}`);
+            await mkdir(teamDir, { recursive: true });
+            const fileExtension = path.extname(imageFile.name);
+            // 文件名包含团队ID、邮箱前缀、图片序号和时间戳
+            const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
+            const fileName = `${teamId}_${emailPrefix}_image_${i}_${Date.now()}${fileExtension}`;
+            const filePath = path.join(teamDir, fileName);
+            const bytes = await imageFile.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            await writeFile(filePath, buffer);
+
+            console.log(`💾 图片保存成功: ${filePath}`);
+
+            const imageResult = await dbOperations.teamImages.create(
+              teamId,
+              imageFile.name,
+              filePath,
+              imageFile.size
+            );
+            console.log(`🗄️ 图片数据库记录创建成功:`, imageResult);
+            imageResults.push(imageResult);
+          } catch (error) {
+            console.error(`❌ 保存图片失败 image_${i}:`, error);
+          }
+        } else {
+          console.log(`⚠️ 未找到图片: image_${i}`);
+        }
+      }
+      console.log(`✅ 图片处理完成，共处理 ${imageResults.length} 个图片`);
+
       return NextResponse.json({
         success: true,
         message: '团队注册成功',
         teamId: teamId,
-        documentsUploaded: documentResults.length
+        documentsUploaded: documentResults.length,
+        imagesUploaded: imageResults.length
       });
     } else {
       return NextResponse.json({ error: '注册失败' }, { status: 500 });
