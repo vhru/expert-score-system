@@ -239,10 +239,13 @@ export default function EnterpriseRegisterPage() {
       if (documents.presentation) formData.append('presentation', documents.presentation);
       if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
 
-      // 核心成员CV
+      // 核心成员CV和证件照
       coreMembers.forEach((member, index) => {
         if (member.cv) {
           formData.append(`memberCv_${index}`, member.cv);
+        }
+        if (member.idPhoto) {
+          formData.append(`memberIdPhoto_${index}`, member.idPhoto);
         }
       });
 

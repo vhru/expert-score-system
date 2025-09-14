@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         id: team.id,
         teamName: team.team_name,
         contactEmail: team.contact_email,
+        audit_status: team.audit_status,
         ...teamInfo
       }
     });
