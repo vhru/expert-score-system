@@ -133,7 +133,8 @@ export async function POST(request: NextRequest) {
       const documentTypes = [
         'businessLicense',
         'commitmentLetter', 
-        'businessPlan',
+        'businessPlanChinese',
+        'businessPlanEnglish',
         'presentation',
         'supplementaryMaterials'
       ];
