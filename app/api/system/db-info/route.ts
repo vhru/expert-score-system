@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbOperations } from '@/lib/database-adapter';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // 检查数据库类型

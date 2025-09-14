@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAllAssignments } from '@/lib/reviewAssignment';
 import { verifyToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // 验证管理员权限
