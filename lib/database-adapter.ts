@@ -180,6 +180,17 @@ const mysqlOperations = {
         [status, notes, auditedBy, id]
       );
       return result;
+    },
+    
+    async update(id: number, data: any) {
+      const pool = getMysqlPool();
+      const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
+      const values = Object.values(data);
+      const [result] = await pool.execute(
+        `UPDATE teams SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [...values, id]
+      );
+      return result;
     }
   },
   
@@ -325,6 +336,12 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM core_members WHERE team_id = ?', [teamId]);
       return rows;
+    },
+    
+    async deleteByTeam(teamId: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM core_members WHERE team_id = ?', [teamId]);
+      return result;
     }
   },
   
@@ -349,6 +366,12 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM team_documents WHERE id = ?', [id]);
       return Array.isArray(rows) ? rows[0] : null;
+    },
+    
+    async deleteByTeamAndType(teamId: number, documentType: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM team_documents WHERE team_id = ? AND document_type = ?', [teamId, documentType]);
+      return result;
     }
   }
 };
@@ -475,6 +498,14 @@ export const dbOperations = {
       } else {
         return sqliteOperations.teams.updateAuditStatus(id, status, notes, auditedBy);
       }
+    },
+    
+    async update(id: number, data: any) {
+      if (useMySQL()) {
+        return await mysqlOperations.teams.update(id, data);
+      } else {
+        return sqliteOperations.teams.update(id, data);
+      }
     }
   },
   
@@ -595,6 +626,14 @@ export const dbOperations = {
       } else {
         return sqliteOperations.coreMembers.findByTeam(teamId);
       }
+    },
+    
+    async deleteByTeam(teamId: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.coreMembers.deleteByTeam(teamId);
+      } else {
+        return sqliteOperations.coreMembers.deleteByTeam(teamId);
+      }
     }
   },
   
@@ -620,6 +659,14 @@ export const dbOperations = {
         return await mysqlOperations.teamDocuments.findById(id);
       } else {
         return sqliteOperations.teamDocuments.findById(id);
+      }
+    },
+    
+    async deleteByTeamAndType(teamId: number, documentType: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamDocuments.deleteByTeamAndType(teamId, documentType);
+      } else {
+        return sqliteOperations.teamDocuments.deleteByTeamAndType(teamId, documentType);
       }
     }
   },

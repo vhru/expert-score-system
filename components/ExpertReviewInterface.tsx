@@ -234,12 +234,6 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => window.open(`/api/expert/view-pdf/${assignment.file_id}`, '_blank')}
-                      className="btn-secondary text-sm"
-                    >
-                      在线查看
-                    </button>
-                    <button
                       onClick={() => handleDownloadFile(assignment)}
                       className="btn-secondary text-sm"
                     >

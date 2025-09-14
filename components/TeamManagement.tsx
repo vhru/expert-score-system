@@ -456,10 +456,6 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                       <p className="font-medium">{selectedTeam.team_name}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">项目名称:</span>
-                      <p className="font-medium">{selectedTeam.project_name || '未填写'}</p>
-                    </div>
-                    <div>
                       <span className="text-gray-500">团队类型:</span>
                       <p className="font-medium">{selectedTeam.is_enterprise ? '企业组' : '团队组'}</p>
                     </div>
@@ -494,90 +490,14 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                       <p className="font-medium">{new Date(selectedTeam.created_at).toLocaleString()}</p>
                     </div>
                   </div>
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      <strong>提示:</strong> 详细的团队信息、成员资料、项目详情等已包含在下载的ZIP文件中。
+                    </p>
+                  </div>
                 </div>
 
-                {/* 团队信息 */}
-                {selectedTeam.teamInfo && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">团队信息</h4>
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-500">团队名称:</span>
-                        <p className="font-medium">{selectedTeam.teamInfo.teamName}</p>
-                      </div>
-                      {selectedTeam.teamInfo.contactPerson && (
-                        <div>
-                          <span className="text-gray-500">联系人:</span>
-                          <p className="font-medium">{selectedTeam.teamInfo.contactPerson}</p>
-                        </div>
-                      )}
-                      {selectedTeam.teamInfo.contactPhone && (
-                        <div>
-                          <span className="text-gray-500">联系电话:</span>
-                          <p className="font-medium">{selectedTeam.teamInfo.contactPhone}</p>
-                        </div>
-                      )}
-                      {selectedTeam.teamInfo.contactEmail && (
-                        <div>
-                          <span className="text-gray-500">联系邮箱:</span>
-                          <p className="font-medium">{selectedTeam.teamInfo.contactEmail}</p>
-                        </div>
-                      )}
-                      {selectedTeam.teamInfo.teamDescription && (
-                        <div>
-                          <span className="text-gray-500">团队介绍:</span>
-                          <p className="font-medium">{selectedTeam.teamInfo.teamDescription}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
 
-                {/* 企业信息 */}
-                {selectedTeam.is_enterprise && (
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">企业信息</h4>
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-500">企业名称:</span>
-                        <p className="font-medium">{selectedTeam.enterprise_name || '未填写'}</p>
-                      </div>
-                      {selectedTeam.enterprise_license && (
-                        <div>
-                          <span className="text-gray-500">企业资质证书:</span>
-                          <p className="font-medium">{selectedTeam.enterprise_license}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 团队图片 */}
-                {selectedTeam.images && selectedTeam.images.length > 0 && (
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">团队图片 ({selectedTeam.images.length}张)</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedTeam.images.map((image) => (
-                        <div key={image.id} className="relative group">
-                          <img
-                            src={`/api/admin/team-images/${image.id}`}
-                            alt={image.image_name}
-                            className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => window.open(`/api/admin/team-images/${image.id}`, '_blank')}
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                              </svg>
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1 truncate">{image.image_name}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* 提交时间 */}
                 <div className="text-sm text-gray-500">

@@ -170,11 +170,117 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // 处理表单中的图片文件（成员证件照、CV等）
+      const imageResults = [];
+      console.log('🖼️ 开始处理表单中的图片文件...');
+      
+      // 收集所有图片文件
+      const imageFiles: { file: File; type: string; memberIndex?: number }[] = [];
+      
+      // 1. 核心成员证件照
+      coreMembers.forEach((member, index) => {
+        if (member.idPhoto) {
+          imageFiles.push({ file: member.idPhoto, type: 'idPhoto', memberIndex: index });
+        }
+        if (member.cv) {
+          imageFiles.push({ file: member.cv, type: 'cv', memberIndex: index });
+        }
+      });
+      
+      // 2. 处理收集到的图片
+      for (const { file, type, memberIndex } of imageFiles) {
+        console.log(`📷 处理图片: ${type}_${memberIndex}, 文件名: ${file.name}, 大小: ${file.size}`);
+        try {
+          // 为每个团队创建单独的子文件夹
+          const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', `team_${teamId}`);
+          await mkdir(teamDir, { recursive: true });
+          const fileExtension = path.extname(file.name);
+          // 文件名包含团队ID、邮箱前缀、类型和成员索引
+          const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
+          const fileName = `${teamId}_${emailPrefix}_${type}_${memberIndex}_${Date.now()}${fileExtension}`;
+          const filePath = path.join(teamDir, fileName);
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          await writeFile(filePath, buffer);
+
+          console.log(`💾 图片保存成功: ${filePath}`);
+
+          const imageResult = await dbOperations.teamImages.create(
+            teamId,
+            file.name,
+            filePath,
+            file.size
+          );
+          console.log(`🗄️ 图片数据库记录创建成功:`, imageResult);
+          imageResults.push(imageResult);
+        } catch (error) {
+          console.error(`❌ 保存图片失败 ${type}_${memberIndex}:`, error);
+        }
+      }
+      console.log(`✅ 图片处理完成，共处理 ${imageResults.length} 个图片`);
+
+      // 保存企业表单信息到Excel文件
+      console.log('📊 开始保存企业表单信息到Excel...');
+      try {
+        const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', `team_${teamId}`);
+        await mkdir(teamDir, { recursive: true });
+        
+        // 创建Excel数据
+        const excelData = {
+          teamInfo: {
+            projectName: basicInfo.projectName,
+            projectBrief: basicInfo.projectBrief,
+            projectStage: basicInfo.projectStage,
+            projectStageOthers: basicInfo.projectStageOthers,
+            registrationCountry: basicInfo.registrationCountry,
+            teamType: 'enterprise'
+          },
+          enterpriseInfo: enterpriseInfo,
+          contactInfo: contactInfo,
+          coreMembers: coreMembers.map((member, index) => ({
+            memberIndex: index + 1,
+            name: member.name,
+            nationality: member.nationality,
+            gender: member.gender,
+            birthDate: member.birthDate,
+            idType: member.idType,
+            idNumber: member.idNumber,
+            phone: member.phone,
+            email: member.email,
+            university: member.university,
+            highestDegree: member.highestDegree,
+            organization: member.organization,
+            position: member.position
+          })),
+          documents: documentResults.map(doc => ({
+            type: doc.document_type,
+            name: doc.document_name,
+            size: doc.file_size,
+            path: doc.document_path
+          })),
+          images: imageResults.map(img => ({
+            name: img.image_name,
+            size: img.image_size,
+            path: img.image_path
+          })),
+          registrationTime: new Date().toISOString()
+        };
+        
+        const excelFileName = `${teamId}_${contactInfo.contactPersonEmail.split('@')[0]}_enterprise_info_${Date.now()}.json`;
+        const excelFilePath = path.join(teamDir, excelFileName);
+        await writeFile(excelFilePath, JSON.stringify(excelData, null, 2));
+        
+        console.log(`📊 Excel信息保存成功: ${excelFilePath}`);
+      } catch (error) {
+        console.error('❌ 保存Excel信息失败:', error);
+      }
+
       return NextResponse.json({
         success: true,
         message: '企业注册成功',
         teamId: teamId,
-        documentsUploaded: documentResults.length
+        documentsUploaded: documentResults.length,
+        imagesUploaded: imageResults.length
       });
     } else {
       return NextResponse.json({ error: '注册失败' }, { status: 500 });

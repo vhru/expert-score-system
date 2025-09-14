@@ -40,8 +40,17 @@ export async function GET(
       return NextResponse.json({ error: '无权访问此文档' }, { status: 403 });
     }
 
-    // 读取文件
-    const filePath = path.join(process.cwd(), document.document_path);
+    // 读取文件 - 修复路径问题
+    let filePath;
+    if (document.document_path.startsWith('/')) {
+      // 绝对路径
+      filePath = document.document_path;
+    } else {
+      // 相对路径
+      filePath = path.join(process.cwd(), document.document_path);
+    }
+    
+    console.log('Downloading file from:', filePath);
     const fileBuffer = await readFile(filePath);
 
     // 返回文件

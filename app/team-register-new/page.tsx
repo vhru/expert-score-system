@@ -27,6 +27,8 @@ export default function TeamRegisterPage() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [teamId, setTeamId] = useState<number | null>(null);
   
   // 基本信息
   const [basicInfo, setBasicInfo] = useState({
@@ -73,8 +75,6 @@ export default function TeamRegisterPage() {
     supplementaryMaterials: null as File | null
   });
 
-  // 图片上传
-  const [images, setImages] = useState<(File | null)[]>([null, null, null, null, null]);
 
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -100,16 +100,68 @@ export default function TeamRegisterPage() {
     setDocuments(prev => ({ ...prev, [type]: file }));
   };
 
-  const handleImageChange = (index: number, file: File | null) => {
-    if (file && file.size > 10 * 1024 * 1024) {
-      setError('图片文件大小不能超过10MB');
-      return;
+
+  // 检查是否为更新模式
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const update = urlParams.get('update');
+    if (update === 'true') {
+      setIsUpdateMode(true);
+      loadTeamData();
     }
-    setImages(prev => {
-      const newImages = [...prev];
-      newImages[index] = file;
-      return newImages;
-    });
+  }, []);
+
+  const loadTeamData = async () => {
+    try {
+      const token = localStorage.getItem('teamToken');
+      if (!token) {
+        router.push('/team-login');
+        return;
+      }
+
+      const response = await fetch('/api/teams/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.team) {
+          const team = data.team;
+          setTeamId(team.id);
+          
+          // 填充基本信息
+          setBasicInfo({
+            projectName: team.project_name || '',
+            coreMembersNationality: team.core_members_nationality || '',
+            nationalityType: team.nationality_type || 'single',
+            selectedCountries: team.selected_countries ? JSON.parse(team.selected_countries) : [],
+            nationalityOthers: team.nationality_others || '',
+            projectBrief: team.project_brief || '',
+            projectStage: team.project_stage || '',
+            projectStageOthers: team.project_stage_others || '',
+            password: '',
+            confirmPassword: ''
+          });
+
+          // 填充联系人信息
+          setContactInfo({
+            contactPersonName: team.contact_person_name || '',
+            contactPersonPosition: team.contact_person_position || '',
+            contactPersonPhone: team.contact_person_phone || '',
+            contactPersonEmail: team.contact_person_email || ''
+          });
+
+          // 填充核心成员信息
+          if (team.core_members && team.core_members.length > 0) {
+            setCoreMembers(team.core_members);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load team data:', error);
+    }
   };
 
   const addCoreMember = () => {
@@ -189,15 +241,10 @@ export default function TeamRegisterPage() {
         }
       });
 
-      // 图片上传
-      images.forEach((image, index) => {
-        if (image) {
-          formData.append(`image_${index}`, image);
-        }
-      });
 
-      const response = await fetch('/api/teams/register-team', {
-        method: 'POST',
+      const apiUrl = isUpdateMode ? `/api/teams/update-team/${teamId}` : '/api/teams/register-team';
+      const response = await fetch(apiUrl, {
+        method: isUpdateMode ? 'PUT' : 'POST',
         body: formData,
       });
 
@@ -223,10 +270,14 @@ export default function TeamRegisterPage() {
       }
 
       if (result && result.success) {
-        alert(t('teamRegister.success'));
-        router.push('/team-login');
+        alert(isUpdateMode ? '团队信息更新成功！' : t('teamRegister.success'));
+        if (isUpdateMode) {
+          router.push('/team-dashboard');
+        } else {
+          router.push('/team-login');
+        }
       } else {
-        setError(result?.error || '注册失败');
+        setError(result?.error || (isUpdateMode ? '更新失败' : '注册失败'));
       }
     } catch (err) {
       setError('注册过程中发生错误');
@@ -257,8 +308,12 @@ export default function TeamRegisterPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             {t('common.required') === '必填' ? (
               <>
-                <h1 className="text-2xl font-bold text-gray-900">{t('teamRegister.title')}</h1>
-                <p className="mt-2 text-sm text-gray-600">{t('teamRegister.subtitle')}</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isUpdateMode ? '更新团队信息' : t('teamRegister.title')}
+                </h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  {isUpdateMode ? '更新您的团队注册信息和提交的文档' : t('teamRegister.subtitle')}
+                </p>
               </>
             ) : (
               <h1 className="text-2xl font-bold text-gray-900">{t('teamRegister.subtitle')}</h1>
@@ -813,31 +868,6 @@ export default function TeamRegisterPage() {
                 </div>
               </div>
 
-              {/* 图片上传 */}
-              <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-900">{t('teamRegister.images.title')}</h3>
-                <p className="text-sm text-gray-600">{t('teamRegister.images.description')}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {images.map((image, index) => (
-                    <div key={index}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t('teamRegister.images.image')} {index + 1} {t('common.optional')}
-                      </label>
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.gif"
-                        onChange={(e) => handleImageChange(index, e.target.files?.[0] || null)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {image && (
-                        <p className="text-xs text-green-600 mt-1">
-                          {t('common.selected')}: {image.name}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* 5. 登录密码 */}
@@ -898,7 +928,7 @@ export default function TeamRegisterPage() {
                 disabled={loading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? t('teamRegister.submitting') : t('teamRegister.submit')}
+                {loading ? (isUpdateMode ? '更新中...' : t('teamRegister.submitting')) : (isUpdateMode ? '更新信息' : t('teamRegister.submit'))}
               </button>
             </div>
           </form>

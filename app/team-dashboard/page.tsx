@@ -144,11 +144,9 @@ export default function TeamDashboard() {
     }
   };
 
-  const handlePreviewDocument = (submission: TeamSubmission) => {
-    // 在新窗口中打开PDF预览
-    const token = localStorage.getItem('teamToken');
-    const url = `/api/teams/download/${submission.id}?preview=true`;
-    window.open(url, '_blank');
+  const handleUpdateForm = () => {
+    // 跳转到表单更新页面
+    router.push('/team-register-new?update=true');
   };
 
   const formatFileSize = (bytes: number) => {
@@ -200,7 +198,15 @@ export default function TeamDashboard() {
         <div className="space-y-6">
           {/* 团队信息卡片 */}
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">团队信息</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-gray-900">团队信息</h2>
+              <button
+                onClick={handleUpdateForm}
+                className="btn-primary text-sm"
+              >
+                更新表单信息
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <span className="text-sm text-gray-500">团队名称:</span>

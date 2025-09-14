@@ -389,6 +389,21 @@ export const dbOperations = {
           }
         );
       });
+    },
+    
+    update: (id: number, data: any): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
+        const values = Object.values(data);
+        db.run(
+          `UPDATE teams SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [...values, id],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
+      });
     }
   },
   
@@ -621,6 +636,15 @@ export const dbOperations = {
         });
       });
     },
+    
+    deleteByTeam: (teamId: number): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM core_members WHERE team_id = ?', [teamId], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
+    },
 
     updateCvPath: (teamId: number, memberOrder: number, cvPath: string): Promise<any> => {
       return new Promise((resolve, reject) => {
@@ -674,6 +698,15 @@ export const dbOperations = {
         db.get('SELECT * FROM team_documents WHERE id = ?', [id], (err, row) => {
           if (err) reject(err);
           else resolve(row);
+        });
+      });
+    },
+    
+    deleteByTeamAndType: (teamId: number, documentType: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM team_documents WHERE team_id = ? AND document_type = ?', [teamId, documentType], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
         });
       });
     },
