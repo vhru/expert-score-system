@@ -37,7 +37,7 @@ export async function GET(
 
     // 获取团队文档
     const documents = await dbOperations.teamDocuments.findByTeam(teamId);
-    if (documents.length === 0) {
+    if (!Array.isArray(documents) || documents.length === 0) {
       return NextResponse.json({ error: '该团队没有上传任何文档' }, { status: 404 });
     }
 
@@ -82,7 +82,7 @@ export async function GET(
     });
 
     // 添加文档到ZIP
-    for (const doc of documents) {
+    for (const doc of documents as any[]) {
       // 处理路径：统一处理为正确的文件路径
       let filePath;
       if (doc.document_path.startsWith('uploads/')) {
@@ -134,7 +134,7 @@ export async function GET(
 ${JSON.stringify(teamInfo, null, 2)}
 
 文档列表:
-${documents.map(doc => `- ${documentTypeMap[doc.document_type] || doc.document_type}: ${doc.document_name} (${doc.file_size} bytes)`).join('\n')}
+${(documents as any[]).map(doc => `- ${doc.document_type}: ${doc.document_name} (${doc.file_size} bytes)`).join('\n')}
 `;
 
     archive.append(teamInfoContent, { name: '团队信息.txt' });

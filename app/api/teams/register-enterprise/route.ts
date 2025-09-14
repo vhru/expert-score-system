@@ -158,9 +158,9 @@ export async function POST(request: NextRequest) {
             const docResult = await dbOperations.teamDocuments.create(
               teamId,
               docType,
-              file.name,
               filePath,
               file.size,
+              file.name,
               file.type
             );
             documentResults.push(docResult);

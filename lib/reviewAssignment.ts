@@ -1,4 +1,4 @@
-import { dbOperations } from './simple-sqlite';
+import { dbOperations } from './database-adapter';
 
 export interface ReviewAssignment {
   id: number;

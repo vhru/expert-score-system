@@ -71,11 +71,11 @@ const mysqlOperations = {
       return Array.isArray(rows) ? rows[0] : null;
     },
     
-    async create(username: string, password: string, role: string, encryptedInfo?: string) {
+    async create(username: string, password: string, role: string, encryptedInfo?: string, expertType?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'INSERT INTO users (username, password, role, encrypted_info) VALUES (?, ?, ?, ?)',
-        [username, password, role, encryptedInfo]
+        'INSERT INTO users (username, password, role, encrypted_info, expert_type) VALUES (?, ?, ?, ?, ?)',
+        [username, password, role, encryptedInfo, expertType || 'team']
       );
       return result;
     },
@@ -92,8 +92,8 @@ const mysqlOperations = {
     async create(teamName: string, password: string, contactEmail: string, encryptedInfo?: string, isEnterprise?: boolean, enterpriseName?: string, enterpriseLicense?: string, projectStage?: string, projectStageOthers?: string, nationalityType?: string, selectedCountries?: string, nationalityOthers?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license, project_stage, project_stage_others, nationality_type, selected_countries, nationality_others) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || '', projectStage || '', projectStageOthers || '', nationalityType || 'single', selectedCountries || '', nationalityOthers || '']
+        'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license, project_stage, project_stage_others, nationality_type, selected_countries, nationality_others, audit_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || '', projectStage || '', projectStageOthers || '', nationalityType || 'single', selectedCountries || '', nationalityOthers || '', 'pending']
       );
       return result;
     },
@@ -251,11 +251,11 @@ const mysqlOperations = {
   
   // 团队文档操作
   teamDocuments: {
-    async create(teamId: number, documentType: string, documentPath: string, documentSize: number) {
+    async create(teamId: number, documentType: string, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'INSERT INTO team_documents (team_id, document_type, document_path, document_size) VALUES (?, ?, ?, ?)',
-        [teamId, documentType, documentPath, documentSize]
+        'INSERT INTO team_documents (team_id, document_type, document_path, file_size, document_name, mime_type) VALUES (?, ?, ?, ?, ?, ?)',
+        [teamId, documentType, documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream']
       );
       return result;
     },
@@ -302,11 +302,11 @@ export const dbOperations = {
       }
     },
     
-    async create(username: string, password: string, role: string, encryptedInfo?: string) {
+    async create(username: string, password: string, role: string, encryptedInfo?: string, expertType?: string) {
       if (useMySQL()) {
-        return await mysqlOperations.users.create(username, password, role, encryptedInfo);
+        return await mysqlOperations.users.create(username, password, role, encryptedInfo, expertType);
       } else {
-        return sqliteOperations.users.create(username, password, role, encryptedInfo);
+        return sqliteOperations.users.create(username, password, role, encryptedInfo, expertType);
       }
     },
     
@@ -482,11 +482,11 @@ export const dbOperations = {
   },
   
   teamDocuments: {
-    async create(teamId: number, documentType: string, documentPath: string, documentSize: number) {
+    async create(teamId: number, documentType: string, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
       if (useMySQL()) {
-        return await mysqlOperations.teamDocuments.create(teamId, documentType, documentPath, documentSize);
+        return await mysqlOperations.teamDocuments.create(teamId, documentType, documentPath, documentSize, documentName, mimeType);
       } else {
-        return sqliteOperations.teamDocuments.create(teamId, documentType, documentPath, documentSize);
+        return sqliteOperations.teamDocuments.create(teamId, documentType, documentPath, documentSize, documentName, mimeType);
       }
     },
     

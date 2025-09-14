@@ -25,6 +25,7 @@ export async function initDatabase() {
           password TEXT NOT NULL,
           role TEXT NOT NULL DEFAULT 'expert' CHECK (role IN ('admin', 'expert')),
           encrypted_info TEXT,
+          expert_type TEXT DEFAULT 'team',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -63,6 +64,10 @@ export async function initDatabase() {
           selected_countries TEXT,
           nationality_others TEXT,
           status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
+          audit_status TEXT DEFAULT 'pending' CHECK (audit_status IN ('pending', 'approved', 'rejected')),
+          audit_notes TEXT,
+          audited_at DATETIME,
+          audited_by TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -264,8 +269,8 @@ export const dbOperations = {
     create: (teamName: string, password: string, contactEmail: string, encryptedInfo?: string, isEnterprise?: boolean, enterpriseName?: string, enterpriseLicense?: string, projectStage?: string, projectStageOthers?: string, nationalityType?: string, selectedCountries?: string, nationalityOthers?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license, project_stage, project_stage_others, nationality_type, selected_countries, nationality_others) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || '', projectStage || '', projectStageOthers || '', nationalityType || 'single', selectedCountries || '', nationalityOthers || ''],
+          'INSERT INTO teams (team_name, password, contact_email, encrypted_info, is_enterprise, enterprise_name, enterprise_license, project_stage, project_stage_others, nationality_type, selected_countries, nationality_others, audit_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [teamName, password, contactEmail, encryptedInfo, isEnterprise || false, enterpriseName || '', enterpriseLicense || '', projectStage || '', projectStageOthers || '', nationalityType || 'single', selectedCountries || '', nationalityOthers || '', 'pending'],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });
@@ -592,11 +597,11 @@ export const dbOperations = {
 
   // 团队文档操作
   teamDocuments: {
-    create: (teamId: number, documentType: string, documentName: string, documentPath: string, fileSize: number, mimeType: string): Promise<any> => {
+    create: (teamId: number, documentType: string, documentPath: string, documentSize: number, documentName?: string, mimeType?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO team_documents (team_id, document_type, document_name, document_path, file_size, mime_type) VALUES (?, ?, ?, ?, ?, ?)',
-          [teamId, documentType, documentName, documentPath, fileSize, mimeType],
+          'INSERT INTO team_documents (team_id, document_type, document_path, file_size, document_name, mime_type) VALUES (?, ?, ?, ?, ?, ?)',
+          [teamId, documentType, documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream'],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });
