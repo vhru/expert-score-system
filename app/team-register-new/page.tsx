@@ -101,16 +101,7 @@ export default function TeamRegisterPage() {
   };
 
 
-  // 检查是否为更新模式
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const update = urlParams.get('update');
-    if (update === 'true') {
-      setIsUpdateMode(true);
-      loadTeamData();
-    }
-  }, []);
-
+  // 加载团队数据
   const loadTeamData = async () => {
     try {
       const token = localStorage.getItem('teamToken');
@@ -131,31 +122,35 @@ export default function TeamRegisterPage() {
           const team = data.team;
           setTeamId(team.id);
           
-          // 填充基本信息
+          // 解密团队信息
+          const { decryptData } = await import('@/lib/encryption');
+          const decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
+          
+          // 设置基本信息
           setBasicInfo({
-            projectName: team.project_name || '',
-            coreMembersNationality: team.core_members_nationality || '',
-            nationalityType: team.nationality_type || 'single',
-            selectedCountries: team.selected_countries ? JSON.parse(team.selected_countries) : [],
-            nationalityOthers: team.nationality_others || '',
-            projectBrief: team.project_brief || '',
-            projectStage: team.project_stage || '',
-            projectStageOthers: team.project_stage_others || '',
+            projectName: decryptedInfo.projectName || '',
+            coreMembersNationality: decryptedInfo.coreMembersNationality || '',
+            nationalityType: decryptedInfo.nationalityType || 'single',
+            selectedCountries: decryptedInfo.selectedCountries || [],
+            nationalityOthers: decryptedInfo.nationalityOthers || '',
+            projectBrief: decryptedInfo.projectBrief || '',
+            projectStage: decryptedInfo.projectStage || '',
+            projectStageOthers: decryptedInfo.projectStageOthers || '',
             password: '',
             confirmPassword: ''
           });
-
-          // 填充联系人信息
+          
+          // 设置联系人信息
           setContactInfo({
-            contactPersonName: team.contact_person_name || '',
-            contactPersonPosition: team.contact_person_position || '',
-            contactPersonPhone: team.contact_person_phone || '',
-            contactPersonEmail: team.contact_person_email || ''
+            contactPersonName: decryptedInfo.contactPersonName || '',
+            contactPersonPosition: decryptedInfo.contactPersonPosition || '',
+            contactPersonPhone: decryptedInfo.contactPersonPhone || '',
+            contactPersonEmail: decryptedInfo.contactPersonEmail || ''
           });
-
-          // 填充核心成员信息
-          if (team.core_members && team.core_members.length > 0) {
-            setCoreMembers(team.core_members);
+          
+          // 设置核心成员信息
+          if (decryptedInfo.coreMembers && Array.isArray(decryptedInfo.coreMembers)) {
+            setCoreMembers(decryptedInfo.coreMembers);
           }
         }
       }
@@ -163,6 +158,17 @@ export default function TeamRegisterPage() {
       console.error('Failed to load team data:', error);
     }
   };
+
+  // 检查是否为更新模式
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const update = urlParams.get('update');
+    if (update === 'true') {
+      setIsUpdateMode(true);
+      loadTeamData();
+    }
+  }, []);
+
 
   const addCoreMember = () => {
     if (coreMembers.length < 6) {

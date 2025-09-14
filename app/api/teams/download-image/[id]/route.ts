@@ -8,13 +8,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 验证团队token
+    // 验证团队token - 支持URL参数或Header
+    let token;
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const url = new URL(request.url);
+    const tokenParam = url.searchParams.get('token');
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (tokenParam) {
+      token = tokenParam;
+    } else {
       return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
-
-    const token = authHeader.substring(7);
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;

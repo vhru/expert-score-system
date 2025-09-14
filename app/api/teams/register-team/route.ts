@@ -255,24 +255,27 @@ export async function POST(request: NextRequest) {
         
         // 团队基本信息
         const teamInfoData = [
-          ['项目名称', basicInfo.projectName],
-          ['项目简介', basicInfo.projectBrief],
-          ['项目阶段', basicInfo.projectStage],
+          ['项目名称', basicInfo.projectName || ''],
+          ['项目简介', basicInfo.projectBrief || ''],
+          ['项目阶段', basicInfo.projectStage || ''],
           ['项目阶段其他', basicInfo.projectStageOthers || ''],
-          ['核心成员国籍', basicInfo.coreMembersNationality],
-          ['国籍类型', basicInfo.nationalityType],
+          ['核心成员国籍', basicInfo.coreMembersNationality || ''],
+          ['国籍类型', basicInfo.nationalityType || ''],
           ['选择的国家', basicInfo.selectedCountries?.join(', ') || ''],
           ['其他国籍', basicInfo.nationalityOthers || ''],
-          ['团队类型', 'team']
+          ['团队类型', '团队组'],
+          ['注册时间', new Date().toLocaleString()],
+          ['团队ID', teamId]
         ];
         const teamInfoSheet = XLSX.utils.aoa_to_sheet(teamInfoData);
         XLSX.utils.book_append_sheet(workbook, teamInfoSheet, '团队信息');
         
         // 联系信息
         const contactData = [
-          ['联系人姓名', contactInfo.contactPersonName],
-          ['联系人邮箱', contactInfo.contactPersonEmail],
-          ['联系人电话', contactInfo.contactPersonPhone]
+          ['联系人姓名', contactInfo.contactPersonName || ''],
+          ['联系人职位', contactInfo.contactPersonPosition || ''],
+          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
+          ['联系人电话', contactInfo.contactPersonPhone || '']
         ];
         const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
         XLSX.utils.book_append_sheet(workbook, contactSheet, '联系信息');

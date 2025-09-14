@@ -250,25 +250,27 @@ export async function POST(request: NextRequest) {
         
         // 项目基本信息
         const projectInfoData = [
-          ['项目名称', basicInfo.projectName],
-          ['项目简介', basicInfo.projectBrief],
-          ['项目阶段', basicInfo.projectStage],
+          ['项目名称', basicInfo.projectName || ''],
+          ['项目简介', basicInfo.projectBrief || ''],
+          ['项目阶段', basicInfo.projectStage || ''],
           ['项目阶段其他', basicInfo.projectStageOthers || ''],
-          ['注册国家', basicInfo.registrationCountry],
-          ['团队类型', 'enterprise']
+          ['注册国家', basicInfo.registrationCountry || ''],
+          ['团队类型', '企业组'],
+          ['注册时间', new Date().toLocaleString()],
+          ['团队ID', teamId]
         ];
         const projectInfoSheet = XLSX.utils.aoa_to_sheet(projectInfoData);
         XLSX.utils.book_append_sheet(workbook, projectInfoSheet, '项目信息');
         
         // 企业信息
         const enterpriseData = [
-          ['企业名称', enterpriseInfo.enterpriseName],
-          ['统一社会信用代码', enterpriseInfo.unifiedSocialCreditCode],
-          ['注册年份', enterpriseInfo.registrationYear],
-          ['法定代表人', enterpriseInfo.legalRepresentative],
-          ['总部位置', enterpriseInfo.headquartersLocation],
-          ['注册资本(USD)', enterpriseInfo.registeredCapitalUsd],
-          ['电话', enterpriseInfo.phone],
+          ['企业名称', enterpriseInfo.enterpriseName || ''],
+          ['统一社会信用代码', enterpriseInfo.unifiedSocialCreditCode || ''],
+          ['注册年份', enterpriseInfo.registrationYear || ''],
+          ['法定代表人', enterpriseInfo.legalRepresentative || ''],
+          ['总部位置', enterpriseInfo.headquartersLocation || ''],
+          ['注册资本(USD)', enterpriseInfo.registeredCapitalUsd || ''],
+          ['电话', enterpriseInfo.phone || ''],
           ['网站', enterpriseInfo.website || '']
         ];
         const enterpriseSheet = XLSX.utils.aoa_to_sheet(enterpriseData);
@@ -276,9 +278,10 @@ export async function POST(request: NextRequest) {
         
         // 联系信息
         const contactData = [
-          ['联系人姓名', contactInfo.contactPersonName],
-          ['联系人邮箱', contactInfo.contactPersonEmail],
-          ['联系人电话', contactInfo.contactPersonPhone]
+          ['联系人姓名', contactInfo.contactPersonName || ''],
+          ['联系人职位', contactInfo.contactPersonPosition || ''],
+          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
+          ['联系人电话', contactInfo.contactPersonPhone || '']
         ];
         const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
         XLSX.utils.book_append_sheet(workbook, contactSheet, '联系信息');

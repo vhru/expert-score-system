@@ -23,6 +23,7 @@ export default function TeamDashboard() {
   const router = useRouter();
   const [teamInfo, setTeamInfo] = useState<any>(null);
   const [submissions, setSubmissions] = useState<TeamSubmission[]>([]);
+  const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
@@ -91,6 +92,7 @@ export default function TeamDashboard() {
     try {
       setTeamInfo(JSON.parse(savedTeamInfo));
       fetchSubmissions(token);
+      fetchImages(token);
     } catch (error) {
       console.error('Failed to parse team info:', error);
       window.location.href = '/team-login';
@@ -112,6 +114,22 @@ export default function TeamDashboard() {
       console.error('Failed to fetch submissions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchImages = async (token: string) => {
+    try {
+      const response = await fetch('/api/teams/images', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setImages(data.images);
+      }
+    } catch (error) {
+      console.error('Failed to fetch images:', error);
     }
   };
 
@@ -174,7 +192,7 @@ export default function TeamDashboard() {
   const handleDownloadDocument = async (submission: TeamSubmission) => {
     try {
       const token = localStorage.getItem('teamToken');
-      const response = await fetch(`/api/teams/download/${submission.id}`, {
+      const response = await fetch(`/api/teams/download-document/${submission.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -354,6 +372,58 @@ export default function TeamDashboard() {
                       <span className="text-xs text-gray-500">
                         {t[language].lastUpdate}: {new Date(submission.updated_at).toLocaleString()}
                       </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 团队图片 */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-gray-900">{t[language].images}</h2>
+            </div>
+
+            {images.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">🖼️</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t[language].noImages}</h3>
+                <p className="text-gray-500">{t[language].noImagesDesc}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {images.map((image) => (
+                  <div key={image.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {image.image_name}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {t[language].uploadTime}: {new Date(image.created_at).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {t[language].fileSize}: {(image.image_size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => {
+                            const token = localStorage.getItem('teamToken');
+                            window.open(`/api/teams/download-image/${image.id}?token=${token}`, '_blank');
+                          }}
+                          className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                        >
+                          {t[language].download}
+                        </button>
+                        <button
+                          onClick={() => window.open(`/team-update-image/${image.id}`, '_blank')}
+                          className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200"
+                        >
+                          {t[language].update}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
