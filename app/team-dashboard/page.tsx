@@ -192,7 +192,7 @@ export default function TeamDashboard() {
   const handleDownloadDocument = async (submission: TeamSubmission) => {
     try {
       const token = localStorage.getItem('teamToken');
-      const response = await fetch(`/api/teams/download-document/${submission.id}`, {
+      const response = await fetch(`/api/teams/download/${submission.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

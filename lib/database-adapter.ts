@@ -314,6 +314,12 @@ const mysqlOperations = {
       return result;
     },
     
+    async findById(id: number) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute('SELECT * FROM team_images WHERE id = ?', [id]);
+      return Array.isArray(rows) ? rows[0] : null;
+    },
+    
     async findByTeam(teamId: number) {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM team_images WHERE team_id = ?', [teamId]);
@@ -608,6 +614,14 @@ export const dbOperations = {
         return await mysqlOperations.teamImages.create(teamId, imageName, imagePath, imageSize);
       } else {
         return sqliteOperations.teamImages.create(teamId, imageName, imagePath, imageSize);
+      }
+    },
+    
+    async findById(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamImages.findById(id);
+      } else {
+        return sqliteOperations.teamImages.findById(id);
       }
     },
     
