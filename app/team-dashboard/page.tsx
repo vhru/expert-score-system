@@ -184,6 +184,31 @@ export default function TeamDashboard() {
     }
   };
 
+  // 文档类型名称映射
+  const getDocumentTypeName = (docType: string) => {
+    const typeMap = {
+      zh: {
+        'commitmentLetter': '承诺书',
+        'technicalInfoChinese': '技术信息_中文',
+        'technicalInfoEnglish': '技术信息_英文',
+        'presentation': '项目展示',
+        'teamInfo': '团队信息',
+        'businessLicense': '营业执照',
+        'businessPlan': '商业计划书'
+      },
+      en: {
+        'commitmentLetter': 'Commitment Letter',
+        'technicalInfoChinese': 'Technical Info (Chinese)',
+        'technicalInfoEnglish': 'Technical Info (English)',
+        'presentation': 'Presentation',
+        'teamInfo': 'Team Info',
+        'businessLicense': 'Business License',
+        'businessPlan': 'Business Plan'
+      }
+    };
+    return typeMap[language][docType] || docType;
+  };
+
   const getReviewStatusText = (submission: TeamSubmission) => {
     if (!submission.expert_assignments || submission.expert_assignments.length === 0) {
       return t[language].pendingExpert;
@@ -202,15 +227,7 @@ export default function TeamDashboard() {
   };
 
   const getDocumentTypeText = (documentType: string) => {
-    const typeMap: { [key: string]: string } = {
-      'commitmentLetter': '承诺书',
-      'presentation': '项目展示',
-      'supplementaryMaterials': '补充材料',
-      'technicalInfo': '技术信息',
-      'businessLicense': '营业执照',
-      'businessPlan': '商业计划书'
-    };
-    return typeMap[documentType] || documentType;
+    return getDocumentTypeName(documentType);
   };
 
   const handleDownloadDocument = async (submission: TeamSubmission) => {

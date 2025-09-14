@@ -10,6 +10,37 @@ export default function TeamLoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [language, setLanguage] = useState<'zh' | 'en'>('zh');
+
+  // 翻译文本
+  const t = {
+    zh: {
+      title: '团队登录',
+      email: '邮箱',
+      password: '密码',
+      login: '登录',
+      register: '注册',
+      switchLanguage: 'English',
+      emailRequired: '请输入邮箱和密码',
+      loginSuccess: '登录成功',
+      loginFailed: '登录失败'
+    },
+    en: {
+      title: 'Team Login',
+      email: 'Email',
+      password: 'Password',
+      login: 'Login',
+      register: 'Register',
+      switchLanguage: '中文',
+      emailRequired: 'Please enter email and password',
+      loginSuccess: 'Login successful',
+      loginFailed: 'Login failed'
+    }
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'zh' ? 'en' : 'zh');
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,7 +54,7 @@ export default function TeamLoginPage() {
     e.preventDefault();
     
     if (!loginForm.email.trim() || !loginForm.password) {
-      setMessage('请输入邮箱和密码');
+      setMessage(t[language].emailRequired);
       setMessageType('error');
       return;
     }
@@ -50,7 +81,7 @@ export default function TeamLoginPage() {
         // 跳转到团队管理页面
         window.location.href = '/team-dashboard';
       } else {
-        setMessage(data.error || '登录失败');
+        setMessage(data.error || t[language].loginFailed);
         setMessageType('error');
       }
     } catch (error) {
@@ -65,11 +96,20 @@ export default function TeamLoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            团队登录
-          </h2>
+          <div className="flex justify-between items-center">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 flex-1">
+              {t[language].title}
+            </h2>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="mt-6 text-sm text-blue-600 hover:text-blue-500"
+            >
+              {t[language].switchLanguage}
+            </button>
+          </div>
           <p className="mt-2 text-center text-sm text-gray-600">
-            登录您的团队账号，管理参赛作品
+            {language === 'zh' ? '登录您的团队账号，管理参赛作品' : 'Login to your team account to manage submissions'}
           </p>
         </div>
         
@@ -77,7 +117,7 @@ export default function TeamLoginPage() {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
-                邮箱
+                {t[language].email}
               </label>
               <input
                 id="email"
@@ -85,14 +125,14 @@ export default function TeamLoginPage() {
                 type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="邮箱地址"
+                placeholder={language === 'zh' ? '邮箱地址' : 'Email address'}
                 value={loginForm.email}
                 onChange={handleInputChange}
               />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                密码
+                {t[language].password}
               </label>
               <input
                 id="password"
@@ -100,7 +140,7 @@ export default function TeamLoginPage() {
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="密码"
+                placeholder={language === 'zh' ? '密码' : 'Password'}
                 value={loginForm.password}
                 onChange={handleInputChange}
               />
@@ -119,7 +159,7 @@ export default function TeamLoginPage() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? '登录中...' : '登录'}
+              {loading ? (language === 'zh' ? '登录中...' : 'Logging in...') : t[language].login}
             </button>
           </div>
 
@@ -128,12 +168,12 @@ export default function TeamLoginPage() {
               href="/portal" 
               className="text-sm text-gray-600 hover:text-gray-800"
             >
-              ← 返回系统首页
+              {language === 'zh' ? '← 返回系统首页' : '← Back to Home'}
             </a>
             <div className="text-sm text-gray-600">
-              还没有团队账号？{' '}
+              {language === 'zh' ? '还没有团队账号？' : "Don't have a team account?"}{' '}
               <a href="/team-register" className="font-medium text-blue-600 hover:text-blue-500">
-                立即注册
+                {language === 'zh' ? '立即注册' : 'Register Now'}
               </a>
             </div>
           </div>

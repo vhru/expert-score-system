@@ -628,8 +628,16 @@ export default function TeamRegisterPage() {
                     value={contactInfo.contactPersonEmail}
                     onChange={handleContactInfoChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isUpdateMode}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isUpdateMode ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                   />
+                  {isUpdateMode && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {t('common.language') === 'zh' ? '联系人邮箱不可修改' : 'Contact email cannot be modified'}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

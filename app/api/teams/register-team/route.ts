@@ -278,7 +278,15 @@ export async function POST(request: NextRequest) {
           ['团队类型', '团队组'],
           ['注册时间', new Date().toLocaleString()],
           ['团队ID', teamId],
-          ['联系邮箱', contactInfo.contactPersonEmail || '']
+          ['联系邮箱', contactInfo.contactPersonEmail || ''],
+          ['', ''],
+          // 3. 需附材料清单
+          ['=== 3. 需附材料清单 ===', ''],
+          ['身份证或护照首页正反面扫描件', ''],
+          ['由团队代表及其他成员签字的参赛承诺书', ''],
+          ['项目技术可行性分析', ''],
+          ['演示文稿', ''],
+          ['其他补充材料', '']
         ];
         const teamInfoSheet = XLSX.utils.aoa_to_sheet(teamInfoData);
         XLSX.utils.book_append_sheet(workbook, teamInfoSheet, '团队信息');

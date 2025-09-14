@@ -180,19 +180,24 @@ export async function POST(request: NextRequest) {
       const imageFiles: { file: File; type: string; memberIndex?: number }[] = [];
       
       // 1. 从FormData中获取核心成员图片
+      console.log('🔍 开始收集图片文件...');
       coreMembers.forEach((member, index) => {
         // 获取证件照
         const idPhotoFile = formData.get(`memberIdPhoto_${index}`) as File;
+        console.log(`🔍 检查证件照 ${index}:`, idPhotoFile ? `${idPhotoFile.name} (${idPhotoFile.size} bytes)` : '未找到');
         if (idPhotoFile) {
           imageFiles.push({ file: idPhotoFile, type: 'idPhoto', memberIndex: index });
         }
         
         // 获取CV文件
         const cvFile = formData.get(`memberCv_${index}`) as File;
+        console.log(`🔍 检查CV ${index}:`, cvFile ? `${cvFile.name} (${cvFile.size} bytes)` : '未找到');
         if (cvFile) {
           imageFiles.push({ file: cvFile, type: 'cv', memberIndex: index });
         }
       });
+      
+      console.log(`🔍 收集到的图片文件数量: ${imageFiles.length}`);
       
       // 2. 处理收集到的图片
       for (const { file, type, memberIndex } of imageFiles) {
@@ -275,7 +280,7 @@ export async function POST(request: NextRequest) {
         const projectInfoSheet = XLSX.utils.aoa_to_sheet(projectInfoData);
         XLSX.utils.book_append_sheet(workbook, projectInfoSheet, '项目信息');
         
-        // 企业信息 - 根据报名表完整信息
+        // 企业信息 - 根据报名表完整信息，包含所有字段
         const enterpriseData = [
           ['=== 3. 企业信息 ===', ''],
           ['企业名称', enterpriseInfo.enterpriseName || ''],
@@ -287,7 +292,16 @@ export async function POST(request: NextRequest) {
           ['注册资本(美元)', enterpriseInfo.registeredCapitalUsd || ''],
           ['电话', enterpriseInfo.phone || ''],
           ['网站', enterpriseInfo.website || ''],
-          ['企业简介', enterpriseInfo.enterpriseOverview || '']
+          ['企业简介', enterpriseInfo.enterpriseOverview || ''],
+          ['', ''],
+          // 4. 需附材料清单
+          ['=== 4. 需附材料清单 ===', ''],
+          ['身份证或护照首页正反面扫描件', ''],
+          ['由法定代表人签字并加盖公章的参赛承诺书', ''],
+          ['商业计划书', ''],
+          ['营业执照扫描件', ''],
+          ['演示文稿', ''],
+          ['其他补充材料', '']
         ];
         const enterpriseSheet = XLSX.utils.aoa_to_sheet(enterpriseData);
         XLSX.utils.book_append_sheet(workbook, enterpriseSheet, '企业信息');
