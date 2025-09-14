@@ -109,8 +109,8 @@ export async function PUT(
         // 删除旧文档
         await dbOperations.teamDocuments.deleteByTeamAndType(teamId, docType);
         
-        // 保存新文档
-        const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', `team_${teamId}`);
+        // 保存新文档 - 使用新的路径结构
+        const teamDir = path.join('/opt/team_data/team_data', `team_${teamId}`);
         await mkdir(teamDir, { recursive: true });
         const fileExtension = path.extname(file.name);
         const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];

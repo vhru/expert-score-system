@@ -67,7 +67,7 @@ export async function PUT(
       filePath = originalImage.image_path;
     } else {
       // 其他情况，尝试直接拼接
-      filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', originalImage.image_path);
+      filePath = path.join('/opt/team_data/team_data', originalImage.image_path);
     }
     
     // 确保目录存在

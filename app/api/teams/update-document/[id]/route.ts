@@ -68,7 +68,7 @@ export async function POST(
       filePath = originalDocument.document_path;
     } else {
       // 其他情况，尝试直接拼接
-      filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', originalDocument.document_path);
+      filePath = path.join('/opt/team_data/team_data', originalDocument.document_path);
     }
     
     // 确保目录存在

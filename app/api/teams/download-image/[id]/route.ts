@@ -55,15 +55,15 @@ export async function GET(
     console.log('   图片名称:', image.image_name);
     console.log('   团队ID:', image.team_id);
     
-    // 如果路径包含 /app/uploads/，替换为 /opt/team_data/
+    // 如果路径包含 /app/uploads/，替换为 /opt/team_data/team_data/
     if (filePath.includes('/app/uploads/')) {
-      filePath = filePath.replace('/app/uploads/', '/opt/team_data/');
+      filePath = filePath.replace('/app/uploads/', '/opt/team_data/team_data/');
       console.log('   替换/app/uploads/后:', filePath);
     }
     
-    // 如果路径包含 /uploads/，替换为 /opt/team_data/
+    // 如果路径包含 /uploads/，替换为 /opt/team_data/team_data/
     if (filePath.includes('/uploads/')) {
-      filePath = filePath.replace('/uploads/', '/opt/team_data/');
+      filePath = filePath.replace('/uploads/', '/opt/team_data/team_data/');
       console.log('   替换/uploads/后:', filePath);
     }
     
