@@ -44,10 +44,12 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Failed to fetch document:', error);
+    console.error('Get document error:', error);
     return NextResponse.json(
       { error: '获取文档信息失败' },
       { status: 500 }
     );
   }
 }
+
+export const dynamic = 'force-dynamic';

@@ -75,13 +75,10 @@ export async function POST(
     // 更新数据库记录
     const updatedDocument = await dbOperations.teamDocuments.update(
       parseInt(params.id),
-      {
-        document_name: newFile.name,
-        document_path: `uploads/team-documents/${fileName}`,
-        file_size: newFile.size,
-        mime_type: newFile.type,
-        uploaded_at: new Date().toISOString()
-      }
+      `uploads/team-documents/${fileName}`,
+      newFile.size,
+      newFile.name,
+      newFile.type
     );
 
     return NextResponse.json({

@@ -719,6 +719,19 @@ export const dbOperations = {
         });
       });
     },
+    
+    update: (id: number, documentPath: string, documentSize: number, documentName?: string, mimeType?: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE team_documents SET document_path = ?, file_size = ?, document_name = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream', id],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
+      });
+    },
   }
 };
 

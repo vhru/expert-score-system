@@ -53,11 +53,14 @@ export async function GET(
     console.log('Downloading file from:', filePath);
     const fileBuffer = await readFile(filePath);
 
+    // 处理中文文件名编码
+    const encodedFileName = encodeURIComponent(document.document_name);
+    
     // 返回文件
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': document.mime_type,
-        'Content-Disposition': `attachment; filename="${document.document_name}"`,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodedFileName}`,
         'Content-Length': fileBuffer.length.toString(),
       },
     });

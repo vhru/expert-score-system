@@ -221,7 +221,14 @@ export default function EnterpriseRegisterPage() {
       formData.append('basicInfo', JSON.stringify(basicInfo));
       formData.append('enterpriseInfo', JSON.stringify(enterpriseInfo));
       formData.append('contactInfo', JSON.stringify(contactInfo));
-      formData.append('coreMembers', JSON.stringify(coreMembers));
+      
+      // 核心成员信息（不包含文件）
+      const coreMembersWithoutFiles = coreMembers.map(member => ({
+        ...member,
+        idPhoto: undefined, // 移除文件对象
+        cv: undefined       // 移除文件对象
+      }));
+      formData.append('coreMembers', JSON.stringify(coreMembersWithoutFiles));
       formData.append('teamType', 'enterprise');
 
       // 文档上传

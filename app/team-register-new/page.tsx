@@ -224,20 +224,32 @@ export default function TeamRegisterPage() {
       // 基本信息
       formData.append('basicInfo', JSON.stringify(basicInfo));
       formData.append('contactInfo', JSON.stringify(contactInfo));
-      formData.append('coreMembers', JSON.stringify(coreMembers));
+      
+      // 核心成员信息（不包含文件）
+      const coreMembersWithoutFiles = coreMembers.map(member => ({
+        ...member,
+        idPhoto: undefined, // 移除文件对象
+        cv: undefined       // 移除文件对象
+      }));
+      formData.append('coreMembers', JSON.stringify(coreMembersWithoutFiles));
       formData.append('teamType', 'team');
 
-      // 文档上传
-      if (documents.commitmentLetter) formData.append('commitmentLetter', documents.commitmentLetter);
-      if (documents.technicalInfoChinese) formData.append('technicalInfoChinese', documents.technicalInfoChinese);
-      if (documents.technicalInfoEnglish) formData.append('technicalInfoEnglish', documents.technicalInfoEnglish);
-      if (documents.presentation) formData.append('presentation', documents.presentation);
-      if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
+      // 文档上传 - 只在注册模式下发送
+      if (!isUpdateMode) {
+        if (documents.commitmentLetter) formData.append('commitmentLetter', documents.commitmentLetter);
+        if (documents.technicalInfoChinese) formData.append('technicalInfoChinese', documents.technicalInfoChinese);
+        if (documents.technicalInfoEnglish) formData.append('technicalInfoEnglish', documents.technicalInfoEnglish);
+        if (documents.presentation) formData.append('presentation', documents.presentation);
+        if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
+      }
 
-      // 核心成员CV
+      // 核心成员CV和证件照 - 更新模式下也发送
       coreMembers.forEach((member, index) => {
         if (member.cv) {
           formData.append(`memberCv_${index}`, member.cv);
+        }
+        if (member.idPhoto) {
+          formData.append(`memberIdPhoto_${index}`, member.idPhoto);
         }
       });
 
@@ -781,7 +793,8 @@ export default function TeamRegisterPage() {
               ))}
             </div>
 
-            {/* 4. 文档上传 */}
+            {/* 4. 文档上传 - 只在注册模式下显示 */}
+            {!isUpdateMode && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.documents.title')} {t('common.required') === '必填' ? '(全部为PDF格式)' : '(all as PDFs)'}</h2>
               
@@ -869,8 +882,10 @@ export default function TeamRegisterPage() {
               </div>
 
             </div>
+            )}
 
-            {/* 5. 登录密码 */}
+            {/* 5. 登录密码 - 只在注册模式下显示 */}
+            {!isUpdateMode && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('teamRegister.password.title')}</h2>
               
@@ -906,6 +921,7 @@ export default function TeamRegisterPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* 必填选填说明 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

@@ -372,6 +372,15 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [result] = await pool.execute('DELETE FROM team_documents WHERE team_id = ? AND document_type = ?', [teamId, documentType]);
       return result;
+    },
+    
+    async update(id: number, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute(
+        'UPDATE team_documents SET document_path = ?, document_size = ?, document_name = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream', id]
+      );
+      return result;
     }
   }
 };
@@ -667,6 +676,14 @@ export const dbOperations = {
         return await mysqlOperations.teamDocuments.deleteByTeamAndType(teamId, documentType);
       } else {
         return sqliteOperations.teamDocuments.deleteByTeamAndType(teamId, documentType);
+      }
+    },
+    
+    async update(id: number, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamDocuments.update(id, documentPath, documentSize, documentName, mimeType);
+      } else {
+        return sqliteOperations.teamDocuments.update(id, documentPath, documentSize, documentName, mimeType);
       }
     }
   },

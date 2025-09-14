@@ -189,6 +189,10 @@ export async function POST(request: NextRequest) {
       
       // 2. 处理收集到的图片
       for (const { file, type, memberIndex } of imageFiles) {
+        if (!file || !file.name) {
+          console.log(`⚠️ 跳过无效图片: ${type}_${memberIndex}`);
+          continue;
+        }
         console.log(`📷 处理图片: ${type}_${memberIndex}, 文件名: ${file.name}, 大小: ${file.size}`);
         try {
           // 为每个团队创建单独的子文件夹
@@ -225,50 +229,74 @@ export async function POST(request: NextRequest) {
         const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', `team_${teamId}`);
         await mkdir(teamDir, { recursive: true });
         
-        // 创建Excel数据
-        const excelData = {
-          teamInfo: {
-            projectName: basicInfo.projectName,
-            projectBrief: basicInfo.projectBrief,
-            projectStage: basicInfo.projectStage,
-            projectStageOthers: basicInfo.projectStageOthers,
-            registrationCountry: basicInfo.registrationCountry,
-            teamType: 'enterprise'
-          },
-          enterpriseInfo: enterpriseInfo,
-          contactInfo: contactInfo,
-          coreMembers: coreMembers.map((member, index) => ({
-            memberIndex: index + 1,
-            name: member.name,
-            nationality: member.nationality,
-            gender: member.gender,
-            birthDate: member.birthDate,
-            idType: member.idType,
-            idNumber: member.idNumber,
-            phone: member.phone,
-            email: member.email,
-            university: member.university,
-            highestDegree: member.highestDegree,
-            organization: member.organization,
-            position: member.position
-          })),
-          documents: documentResults.map(doc => ({
-            type: doc.document_type,
-            name: doc.document_name,
-            size: doc.file_size,
-            path: doc.document_path
-          })),
-          images: imageResults.map(img => ({
-            name: img.image_name,
-            size: img.image_size,
-            path: img.image_path
-          })),
-          registrationTime: new Date().toISOString()
-        };
+        // 导入Excel库
+        const XLSX = await import('xlsx');
         
-        const excelFileName = `${teamId}_${contactInfo.contactPersonEmail.split('@')[0]}_enterprise_info_${Date.now()}.json`;
+        // 创建工作簿
+        const workbook = XLSX.utils.book_new();
+        
+        // 项目基本信息
+        const projectInfoData = [
+          ['项目名称', basicInfo.projectName],
+          ['项目简介', basicInfo.projectBrief],
+          ['项目阶段', basicInfo.projectStage],
+          ['项目阶段其他', basicInfo.projectStageOthers || ''],
+          ['注册国家', basicInfo.registrationCountry],
+          ['团队类型', 'enterprise']
+        ];
+        const projectInfoSheet = XLSX.utils.aoa_to_sheet(projectInfoData);
+        XLSX.utils.book_append_sheet(workbook, projectInfoSheet, '项目信息');
+        
+        // 企业信息
+        const enterpriseData = [
+          ['企业名称', enterpriseInfo.enterpriseName],
+          ['统一社会信用代码', enterpriseInfo.unifiedSocialCreditCode],
+          ['注册年份', enterpriseInfo.registrationYear],
+          ['法定代表人', enterpriseInfo.legalRepresentative],
+          ['总部位置', enterpriseInfo.headquartersLocation],
+          ['注册资本(USD)', enterpriseInfo.registeredCapitalUsd],
+          ['电话', enterpriseInfo.phone],
+          ['网站', enterpriseInfo.website || '']
+        ];
+        const enterpriseSheet = XLSX.utils.aoa_to_sheet(enterpriseData);
+        XLSX.utils.book_append_sheet(workbook, enterpriseSheet, '企业信息');
+        
+        // 联系信息
+        const contactData = [
+          ['联系人姓名', contactInfo.contactPersonName],
+          ['联系人邮箱', contactInfo.contactPersonEmail],
+          ['联系人电话', contactInfo.contactPersonPhone]
+        ];
+        const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
+        XLSX.utils.book_append_sheet(workbook, contactSheet, '联系信息');
+        
+        // 核心成员信息
+        const memberHeaders = ['成员序号', '姓名', '国籍', '性别', '出生日期', '证件类型', '证件号码', '电话', '邮箱', '大学', '最高学历', '组织', '职位'];
+        const memberData = [memberHeaders];
+        coreMembers.forEach((member, index) => {
+          memberData.push([
+            index + 1,
+            member.name,
+            member.nationality,
+            member.gender,
+            member.birthDate,
+            member.idType,
+            member.idNumber,
+            member.phone,
+            member.email,
+            member.university,
+            member.highestDegree,
+            member.organization,
+            member.position
+          ]);
+        });
+        const memberSheet = XLSX.utils.aoa_to_sheet(memberData);
+        XLSX.utils.book_append_sheet(workbook, memberSheet, '核心成员');
+        
+        // 保存Excel文件
+        const excelFileName = `${teamId}_${contactInfo.contactPersonEmail.split('@')[0]}_enterprise_info_${Date.now()}.xlsx`;
         const excelFilePath = path.join(teamDir, excelFileName);
-        await writeFile(excelFilePath, JSON.stringify(excelData, null, 2));
+        XLSX.writeFile(workbook, excelFilePath);
         
         console.log(`📊 Excel信息保存成功: ${excelFilePath}`);
       } catch (error) {
