@@ -871,7 +871,7 @@ export async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         file_id INT NOT NULL,
         expert_id INT NOT NULL,
-        status ENUM('assigned', 'in_progress', 'completed') DEFAULT 'assigned',
+        assignment_status ENUM('assigned', 'in_progress', 'completed') DEFAULT 'assigned',
         score DECIMAL(5,2),
         comments TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -881,6 +881,26 @@ export async function initDatabase() {
       )
     `);
     
+    // 确保assignment_status字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE review_assignments ADD COLUMN assignment_status ENUM('assigned', 'in_progress', 'completed') DEFAULT 'assigned'`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add assignment_status column:', error.message);
+      }
+    }
+    
+    // 如果存在旧的status字段，将其数据迁移到assignment_status并删除旧字段
+    try {
+      await pool.execute(`UPDATE review_assignments SET assignment_status = status WHERE assignment_status IS NULL AND status IS NOT NULL`);
+      await pool.execute(`ALTER TABLE review_assignments DROP COLUMN status`);
+    } catch (error) {
+      // 如果status字段不存在或已经删除，忽略错误
+      if (!error.message.includes("Unknown column 'status'") && !error.message.includes("check that column/key exists")) {
+        console.warn('Warning: Could not migrate status column:', error.message);
+      }
+    }
+    
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS team_images (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -888,25 +908,65 @@ export async function initDatabase() {
         image_name VARCHAR(255) NOT NULL,
         image_path VARCHAR(500) NOT NULL,
         image_size INT NOT NULL,
+        mime_type VARCHAR(100) NOT NULL DEFAULT 'image/jpeg',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (team_id) REFERENCES teams(id)
       )
     `);
     
+    // 确保team_images表的mime_type字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE team_images ADD COLUMN mime_type VARCHAR(100) NOT NULL DEFAULT 'image/jpeg'`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add mime_type column to team_images:', error.message);
+      }
+    }
+    
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS core_members (
         id INT AUTO_INCREMENT PRIMARY KEY,
         team_id INT NOT NULL,
+        member_order INT NOT NULL DEFAULT 0,
         name VARCHAR(100) NOT NULL,
-        position VARCHAR(100),
         nationality VARCHAR(50),
+        gender VARCHAR(10),
+        birth_date VARCHAR(20),
         id_type VARCHAR(20),
         id_number VARCHAR(50),
+        phone VARCHAR(20),
+        email VARCHAR(100),
+        university VARCHAR(200),
+        highest_degree VARCHAR(50),
+        organization VARCHAR(200),
+        position VARCHAR(100),
         cv_path VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (team_id) REFERENCES teams(id)
+        FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
       )
     `);
+    
+    // 确保core_members表的字段存在（兼容现有数据库）
+    const coreMemberFields = [
+      { name: 'member_order', type: 'INT NOT NULL DEFAULT 0' },
+      { name: 'gender', type: 'VARCHAR(10)' },
+      { name: 'birth_date', type: 'VARCHAR(20)' },
+      { name: 'phone', type: 'VARCHAR(20)' },
+      { name: 'email', type: 'VARCHAR(100)' },
+      { name: 'university', type: 'VARCHAR(200)' },
+      { name: 'highest_degree', type: 'VARCHAR(50)' },
+      { name: 'organization', type: 'VARCHAR(200)' }
+    ];
+    
+    for (const field of coreMemberFields) {
+      try {
+        await pool.execute(`ALTER TABLE core_members ADD COLUMN ${field.name} ${field.type}`);
+      } catch (error) {
+        if (!error.message.includes('Duplicate column name')) {
+          console.warn(`Warning: Could not add ${field.name} column to core_members:`, error.message);
+        }
+      }
+    }
     
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS team_documents (
