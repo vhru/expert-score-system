@@ -110,6 +110,9 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchTeams = async () => {
     try {
@@ -241,6 +244,50 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
       console.error('Reset password error:', error);
       alert('密码重置失败');
     }
+  };
+
+  const handleDeleteTeam = (team: Team) => {
+    setTeamToDelete(team);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteTeam = async () => {
+    if (!teamToDelete) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/teams/${teamToDelete.id}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || '团队删除成功！');
+        // 刷新团队列表
+        await fetchTeams();
+        // 关闭详情面板
+        setShowDetails(false);
+        setSelectedTeam(null);
+      } else {
+        const error = await response.json();
+        alert(`删除失败: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Delete team error:', error);
+      alert('删除团队失败');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setTeamToDelete(null);
+    }
+  };
+
+  const cancelDeleteTeam = () => {
+    setShowDeleteConfirm(false);
+    setTeamToDelete(null);
   };
 
   // 获取状态颜色
@@ -418,6 +465,12 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                     >
                       下载文件
                     </button>
+                    <button
+                      onClick={() => handleDeleteTeam(team)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium"
+                    >
+                      🗑️ 删除
+                    </button>
                   </div>
                 </div>
               </li>
@@ -524,7 +577,65 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                 >
                   下载文件
                 </button>
+                <button
+                  onClick={() => handleDeleteTeam(selectedTeam)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
+                >
+                  🗑️ 删除团队
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 删除确认模态框 */}
+      {showDeleteConfirm && teamToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">确认删除团队</h3>
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                您确定要删除团队 <strong>"{teamToDelete.team_name}"</strong> 吗？
+              </p>
+              <p className="text-sm text-red-600 mt-2">
+                ⚠️ 此操作将永久删除以下内容：
+              </p>
+              <ul className="text-sm text-red-600 ml-4 mt-1">
+                <li>• 团队基本信息</li>
+                <li>• 所有上传的文档和图片</li>
+                <li>• 核心成员信息</li>
+                <li>• 评审记录</li>
+                <li>• 相关文件夹</li>
+              </ul>
+              <p className="text-sm text-red-600 mt-2 font-medium">
+                此操作无法撤销！
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDeleteTeam}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDeleteTeam}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                {deleting ? '删除中...' : '确认删除'}
+              </button>
             </div>
           </div>
         </div>
