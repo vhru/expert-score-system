@@ -181,23 +181,33 @@ export async function POST(request: NextRequest) {
       
       // 1. 从FormData中获取核心成员图片
       console.log('🔍 开始收集图片文件...');
+      console.log('🔍 FormData中的所有键:', Array.from(formData.keys()));
+      console.log('🔍 核心成员数量:', coreMembers.length);
+      
       coreMembers.forEach((member, index) => {
+        console.log(`🔍 处理成员 ${index}:`, member.name);
+        
         // 获取证件照
         const idPhotoFile = formData.get(`memberIdPhoto_${index}`) as File;
         console.log(`🔍 检查证件照 ${index}:`, idPhotoFile ? `${idPhotoFile.name} (${idPhotoFile.size} bytes)` : '未找到');
-        if (idPhotoFile) {
+        if (idPhotoFile && idPhotoFile.size > 0) {
           imageFiles.push({ file: idPhotoFile, type: 'idPhoto', memberIndex: index });
+          console.log(`✅ 添加证件照到处理队列: ${idPhotoFile.name}`);
         }
         
         // 获取CV文件
         const cvFile = formData.get(`memberCv_${index}`) as File;
         console.log(`🔍 检查CV ${index}:`, cvFile ? `${cvFile.name} (${cvFile.size} bytes)` : '未找到');
-        if (cvFile) {
+        if (cvFile && cvFile.size > 0) {
           imageFiles.push({ file: cvFile, type: 'cv', memberIndex: index });
+          console.log(`✅ 添加CV到处理队列: ${cvFile.name}`);
         }
       });
       
       console.log(`🔍 收集到的图片文件数量: ${imageFiles.length}`);
+      imageFiles.forEach((item, index) => {
+        console.log(`🔍 文件 ${index}: ${item.type}_${item.memberIndex} - ${item.file.name}`);
+      });
       
       // 2. 处理收集到的图片
       for (const { file, type, memberIndex } of imageFiles) {

@@ -28,6 +28,7 @@ export default function TeamDashboard() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
+  const [auditStatus, setAuditStatus] = useState<string>('');
 
   // 翻译文本
   const t = {
@@ -62,6 +63,8 @@ export default function TeamDashboard() {
       pending: '待处理',
       processing: '处理中',
       pendingExpert: '待分配专家',
+      auditPassed: '审核通过',
+      auditPassedMessage: '您的提交已通过审核，无法再进行修改。',
       switchLanguage: 'English'
     },
     en: {
@@ -95,6 +98,8 @@ export default function TeamDashboard() {
       pending: 'Pending',
       processing: 'Processing',
       pendingExpert: 'Pending Expert Assignment',
+      auditPassed: 'Audit Passed',
+      auditPassedMessage: 'Your submission has been approved. No further changes are allowed.',
       switchLanguage: '中文'
     }
   };
@@ -114,7 +119,9 @@ export default function TeamDashboard() {
     }
 
     try {
-      setTeamInfo(JSON.parse(savedTeamInfo));
+      const parsedTeamInfo = JSON.parse(savedTeamInfo);
+      setTeamInfo(parsedTeamInfo);
+      setAuditStatus(parsedTeamInfo.audit_status || 'pending');
       fetchSubmissions(token);
       fetchImages(token);
     } catch (error) {
@@ -282,8 +289,28 @@ export default function TeamDashboard() {
     );
   }
 
+  const isAuditPassed = auditStatus === 'approved' || auditStatus === 'passed';
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 审核通过横幅 */}
+      {isAuditPassed && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">
+                <strong>{t[language].auditPassed}</strong> - {t[language].auditPassedMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
@@ -297,12 +324,15 @@ export default function TeamDashboard() {
                 >
                   {t[language].switchLanguage}
                 </button>
-                <a 
-                  href="/team-submit" 
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  {t[language].submitNew}
-                </a>
+                {/* 审核通过后隐藏提交新作品链接 */}
+                {!isAuditPassed && (
+                  <a 
+                    href="/team-submit" 
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {t[language].submitNew}
+                  </a>
+                )}
                 <button
                   onClick={handleLogout}
                   className="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -320,12 +350,15 @@ export default function TeamDashboard() {
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-medium text-gray-900">{t[language].teamInfo}</h2>
-              <button
-                onClick={handleUpdateForm}
-                className="btn-primary text-sm"
-              >
-                {t[language].updateForm}
-              </button>
+              {/* 审核通过后隐藏更新表单按钮 */}
+              {!isAuditPassed && (
+                <button
+                  onClick={handleUpdateForm}
+                  className="btn-primary text-sm"
+                >
+                  {t[language].updateForm}
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
