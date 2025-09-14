@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-export async function POST(
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -28,78 +28,78 @@ export async function POST(
 
     const { dbOperations } = await import('@/lib/database-adapter');
     
-    // 获取原文档信息
-    const originalDocument = await dbOperations.teamDocuments.findById(parseInt(params.id));
-    
-    if (!originalDocument) {
-      return NextResponse.json({ error: '文档不存在' }, { status: 404 });
+    // 获取原始图片信息
+    const originalImage = await dbOperations.teamImages.findById(parseInt(params.id));
+    if (!originalImage) {
+      return NextResponse.json({ error: '图片不存在' }, { status: 404 });
     }
 
-    // 验证文档属于当前团队
-    if (originalDocument.team_id !== decoded.id) {
-      return NextResponse.json({ error: '无权访问此文档' }, { status: 403 });
+    // 验证图片是否属于当前团队
+    if (originalImage.team_id !== decoded.id) {
+      return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 
-    // 获取新文件
+    // 解析表单数据
     const formData = await request.formData();
-    const newFile = formData.get('file') as File;
-
-    if (!newFile) {
-      return NextResponse.json({ error: '未选择文件' }, { status: 400 });
+    const newImage = formData.get('image') as File;
+    
+    if (!newImage) {
+      return NextResponse.json({ error: '请选择要上传的图片' }, { status: 400 });
     }
 
     // 检查文件类型
-    if (newFile.type !== 'application/pdf') {
-      return NextResponse.json({ error: '只支持PDF格式文件' }, { status: 400 });
+    if (!newImage.type.startsWith('image/')) {
+      return NextResponse.json({ error: '只能上传图片文件' }, { status: 400 });
     }
 
-    // 检查文件大小 (10MB)
-    if (newFile.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: '文件大小不能超过10MB' }, { status: 400 });
+    // 检查文件大小 (5MB)
+    if (newImage.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: '图片大小不能超过5MB' }, { status: 400 });
     }
 
     // 构建文件路径 - 保持原有路径结构
     let filePath;
-    if (originalDocument.document_path.startsWith('uploads/')) {
+    if (originalImage.image_path.startsWith('uploads/')) {
       // 相对路径，直接拼接
-      filePath = path.join(process.cwd(), originalDocument.document_path);
-    } else if (path.isAbsolute(originalDocument.document_path)) {
+      filePath = path.join(process.cwd(), originalImage.image_path);
+    } else if (path.isAbsolute(originalImage.image_path)) {
       // 绝对路径，直接使用
-      filePath = originalDocument.document_path;
+      filePath = originalImage.image_path;
     } else {
       // 其他情况，尝试直接拼接
-      filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', originalDocument.document_path);
+      filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', originalImage.image_path);
     }
     
     // 确保目录存在
     const uploadDir = path.dirname(filePath);
     await mkdir(uploadDir, { recursive: true });
 
-    // 保存新文件
-    const bytes = await newFile.arrayBuffer();
+    // 保存新图片
+    const bytes = await newImage.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
     // 更新数据库记录 - 保持原有路径，只更新文件大小和名称
-    const updatedDocument = await dbOperations.teamDocuments.update(
+    const updatedImage = await dbOperations.teamImages.update(
       parseInt(params.id),
-      originalDocument.document_path, // 保持原有路径
-      newFile.size,
-      newFile.name,
-      newFile.type
+      originalImage.image_path, // 保持原有路径
+      newImage.size,
+      newImage.name
     );
 
     return NextResponse.json({
       success: true,
-      message: '文档更新成功',
-      document: updatedDocument
+      message: '图片更新成功',
+      image: updatedImage
     });
 
   } catch (error) {
-    console.error('Update document error:', error);
+    console.error('Update image error:', error);
     return NextResponse.json(
-      { error: '更新文档失败' },
+      { error: '更新图片失败' },
       { status: 500 }
     );
   }
 }
+
+export const dynamic = 'force-dynamic';

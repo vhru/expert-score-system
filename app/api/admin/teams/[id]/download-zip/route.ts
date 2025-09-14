@@ -120,6 +120,35 @@ export async function GET(
       archive.file(filePath, { name: newFileName });
     }
 
+    // 添加团队图片到ZIP
+    try {
+      const images = await dbOperations.teamImages.findByTeam(teamId);
+      if (Array.isArray(images) && images.length > 0) {
+        for (const image of images as any[]) {
+          // 处理图片路径
+          let imagePath;
+          if (image.image_path.startsWith('uploads/')) {
+            imagePath = path.join(process.cwd(), image.image_path);
+          } else if (path.isAbsolute(image.image_path)) {
+            imagePath = image.image_path;
+          } else {
+            imagePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', image.image_path);
+          }
+          
+          // 检查图片是否存在
+          if (fs.existsSync(imagePath)) {
+            const fileExtension = path.extname(image.image_name);
+            const newImageName = `图片_${image.id}_${image.image_name}`;
+            archive.file(imagePath, { name: `images/${newImageName}` });
+          } else {
+            console.warn(`图片不存在: ${imagePath}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('添加图片到ZIP时出错:', error);
+    }
+
     // 添加团队信息文件
     const teamInfoContent = `团队信息
 ================
@@ -135,6 +164,9 @@ ${JSON.stringify(teamInfo, null, 2)}
 
 文档列表:
 ${(documents as any[]).map(doc => `- ${doc.document_type}: ${doc.document_name} (${doc.file_size} bytes)`).join('\n')}
+
+图片列表:
+${(await dbOperations.teamImages.findByTeam(teamId) as any[]).map((img: any) => `- ${img.image_name}: ${img.image_name} (${img.image_size} bytes)`).join('\n')}
 `;
 
     archive.append(teamInfoContent, { name: '团队信息.txt' });

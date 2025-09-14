@@ -724,6 +724,16 @@ export async function initDatabase() {
       }
     }
     
+    // 确保files表的team_name字段存在（兼容现有数据库）
+    try {
+      await pool.execute(`ALTER TABLE files ADD COLUMN team_name VARCHAR(100)`);
+    } catch (error) {
+      // 如果字段已存在，忽略错误
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add team_name column:', error.message);
+      }
+    }
+    
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS teams (
         id INT AUTO_INCREMENT PRIMARY KEY,

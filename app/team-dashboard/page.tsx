@@ -14,7 +14,10 @@ interface TeamSubmission {
   updated_at: string;
   review_status?: string;
   expert_assignments?: any[];
+  document_type?: string;
+  document_name?: string;
 }
+
 
 export default function TeamDashboard() {
   const router = useRouter();
@@ -60,6 +63,7 @@ export default function TeamDashboard() {
       setLoading(false);
     }
   };
+
 
   const handleLogout = () => {
     localStorage.removeItem('teamToken');
@@ -299,6 +303,7 @@ export default function TeamDashboard() {
               </div>
             )}
           </div>
+
         </div>
       </main>
     </div>
