@@ -84,9 +84,15 @@ export async function GET(
     // 直接扫描团队文件夹，不需要数据库查询
     const teamName = team.team_name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
     const contactEmail = team.contact_email.replace(/[^a-zA-Z0-9@.-]/g, '_');
-    const teamFolder = path.join('/opt/team_data', `${teamName}_${contactEmail}_${teamTypeSuffix}`);
+    const teamFolder = path.join('/opt/team_data/team_data', `${teamName}_${contactEmail}_${teamTypeSuffix}`);
     
-    console.log('扫描团队文件夹:', teamFolder);
+    console.log('📦 ZIP下载调试信息:');
+    console.log('   团队ID:', teamId);
+    console.log('   团队名称:', team.team_name);
+    console.log('   联系邮箱:', team.contact_email);
+    console.log('   团队类型:', teamTypeSuffix);
+    console.log('   扫描团队文件夹:', teamFolder);
+    console.log('   文件夹是否存在:', fs.existsSync(teamFolder));
     
     // 检查团队文件夹是否存在
     if (fs.existsSync(teamFolder)) {

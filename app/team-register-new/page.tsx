@@ -118,8 +118,10 @@ export default function TeamRegisterPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📋 获取团队数据响应:', data);
         if (data.success && data.team) {
           const team = data.team;
+          console.log('📋 团队数据:', team);
           setTeamId(team.id);
           
           // 解密团队信息
