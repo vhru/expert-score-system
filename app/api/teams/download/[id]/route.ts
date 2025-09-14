@@ -43,22 +43,32 @@ export async function GET(
     // 读取文件 - 修复路径问题
     let filePath = document.document_path;
     
+    console.log('📄 文档下载调试信息:');
+    console.log('   原始路径:', filePath);
+    console.log('   文档ID:', document.id);
+    console.log('   文档名称:', document.document_name);
+    console.log('   团队ID:', document.team_id);
+    
     // 如果路径包含 /app/uploads/，替换为 /opt/team_data/
     if (filePath.includes('/app/uploads/')) {
       filePath = filePath.replace('/app/uploads/', '/opt/team_data/');
+      console.log('   替换/app/uploads/后:', filePath);
     }
     
     // 如果路径包含 /uploads/，替换为 /opt/team_data/
     if (filePath.includes('/uploads/')) {
       filePath = filePath.replace('/uploads/', '/opt/team_data/');
+      console.log('   替换/uploads/后:', filePath);
     }
     
     // 如果不是绝对路径，使用当前工作目录
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath);
+      console.log('   添加工作目录后:', filePath);
     }
     
-    console.log('Downloading file from:', filePath);
+    console.log('   最终文件路径:', filePath);
+    
     const fileBuffer = await readFile(filePath);
 
     // 处理中文文件名编码

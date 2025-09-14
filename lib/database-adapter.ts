@@ -329,7 +329,7 @@ const mysqlOperations = {
     async update(id: number, imagePath: string, imageSize: number, imageName?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'UPDATE team_images SET image_path = ?, image_size = ?, image_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE team_images SET image_path = ?, image_size = ?, image_name = ? WHERE id = ?',
         [imagePath, imageSize, imageName || '', id]
       );
       return result;

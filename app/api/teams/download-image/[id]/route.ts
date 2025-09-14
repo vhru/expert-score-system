@@ -49,25 +49,40 @@ export async function GET(
     // 构建文件路径 - 修复路径问题
     let filePath = image.image_path;
     
+    console.log('🖼️ 图片下载调试信息:');
+    console.log('   原始路径:', filePath);
+    console.log('   图片ID:', image.id);
+    console.log('   图片名称:', image.image_name);
+    console.log('   团队ID:', image.team_id);
+    
     // 如果路径包含 /app/uploads/，替换为 /opt/team_data/
     if (filePath.includes('/app/uploads/')) {
       filePath = filePath.replace('/app/uploads/', '/opt/team_data/');
+      console.log('   替换/app/uploads/后:', filePath);
     }
     
     // 如果路径包含 /uploads/，替换为 /opt/team_data/
     if (filePath.includes('/uploads/')) {
       filePath = filePath.replace('/uploads/', '/opt/team_data/');
+      console.log('   替换/uploads/后:', filePath);
     }
     
     // 如果不是绝对路径，使用当前工作目录
     if (!path.isAbsolute(filePath)) {
       filePath = path.join(process.cwd(), filePath);
+      console.log('   添加工作目录后:', filePath);
     }
+    
+    console.log('   最终文件路径:', filePath);
+    console.log('   文件是否存在:', fs.existsSync(filePath));
     
     // 检查文件是否存在
     if (!fs.existsSync(filePath)) {
+      console.log('❌ 文件不存在，返回404');
       return NextResponse.json({ error: '文件不存在' }, { status: 404 });
     }
+    
+    console.log('✅ 文件存在，开始读取');
 
     // 读取文件
     const fileBuffer = fs.readFileSync(filePath);

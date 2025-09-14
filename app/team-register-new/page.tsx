@@ -124,7 +124,28 @@ export default function TeamRegisterPage() {
           
           // 解密团队信息
           const { decryptData } = await import('@/lib/encryption');
-          const decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
+          let decryptedInfo;
+          try {
+            decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
+          } catch (error) {
+            console.error('解密团队信息失败:', error);
+            // 如果解密失败，使用数据库中的基本信息
+            decryptedInfo = {
+              projectName: team.team_name || '',
+              projectBrief: '',
+              projectStage: team.project_stage || '',
+              projectStageOthers: team.project_stage_others || '',
+              coreMembersNationality: '',
+              nationalityType: team.nationality_type || 'single',
+              selectedCountries: team.selected_countries ? JSON.parse(team.selected_countries) : [],
+              nationalityOthers: team.nationality_others || '',
+              contactPersonName: '',
+              contactPersonPosition: '',
+              contactPersonPhone: '',
+              contactPersonEmail: team.contact_email || '',
+              coreMembers: []
+            };
+          }
           
           // 设置基本信息
           setBasicInfo({
@@ -249,15 +270,17 @@ export default function TeamRegisterPage() {
         if (documents.supplementaryMaterials) formData.append('supplementaryMaterials', documents.supplementaryMaterials);
       }
 
-      // 核心成员CV和证件照 - 更新模式下也发送
-      coreMembers.forEach((member, index) => {
-        if (member.cv) {
-          formData.append(`memberCv_${index}`, member.cv);
-        }
-        if (member.idPhoto) {
-          formData.append(`memberIdPhoto_${index}`, member.idPhoto);
-        }
-      });
+      // 核心成员CV和证件照 - 只在注册模式下发送
+      if (!isUpdateMode) {
+        coreMembers.forEach((member, index) => {
+          if (member.cv) {
+            formData.append(`memberCv_${index}`, member.cv);
+          }
+          if (member.idPhoto) {
+            formData.append(`memberIdPhoto_${index}`, member.idPhoto);
+          }
+        });
+      }
 
 
       const apiUrl = isUpdateMode ? `/api/teams/update-team/${teamId}` : '/api/teams/register-team';
@@ -788,6 +811,8 @@ export default function TeamRegisterPage() {
                       />
                     </div>
 
+                    {/* 更新模式下隐藏简历上传 */}
+                    {!isUpdateMode && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.cv')}</label>
                       <input
@@ -797,6 +822,7 @@ export default function TeamRegisterPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                    )}
                   </div>
                 </div>
               ))}
