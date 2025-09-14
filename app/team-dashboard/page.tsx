@@ -50,6 +50,18 @@ export default function TeamDashboard() {
       noImagesDesc: '您还没有上传任何图片。',
       uploadTime: '上传时间',
       fileSize: '文件大小',
+      contactPerson: '联系人',
+      contactPhone: '联系电话',
+      notFilled: '未填写',
+      fileName: '文件名',
+      fileType: '文件类型',
+      submissionTime: '提交时间',
+      reviewStatus: '评审状态',
+      documentId: '文档ID',
+      submitted: '已提交',
+      pending: '待处理',
+      processing: '处理中',
+      pendingExpert: '待分配专家',
       switchLanguage: 'English'
     },
     en: {
@@ -71,6 +83,18 @@ export default function TeamDashboard() {
       noImagesDesc: 'You have not uploaded any images yet.',
       uploadTime: 'Upload Time',
       fileSize: 'File Size',
+      contactPerson: 'Contact Person',
+      contactPhone: 'Contact Phone',
+      notFilled: 'Not Filled',
+      fileName: 'File Name',
+      fileType: 'File Type',
+      submissionTime: 'Submission Time',
+      reviewStatus: 'Review Status',
+      documentId: 'Document ID',
+      submitted: 'Submitted',
+      pending: 'Pending',
+      processing: 'Processing',
+      pendingExpert: 'Pending Expert Assignment',
       switchLanguage: '中文'
     }
   };
@@ -152,17 +176,17 @@ export default function TeamDashboard() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'completed': return '已提交';
-      case 'pending': return '待处理';
-      case 'processing': return '处理中';
-      case 'failed': return '失败';
-      default: return '未知';
+      case 'completed': return t[language].submitted;
+      case 'pending': return t[language].pending;
+      case 'processing': return t[language].processing;
+      case 'failed': return language === 'zh' ? '失败' : 'Failed';
+      default: return language === 'zh' ? '未知' : 'Unknown';
     }
   };
 
   const getReviewStatusText = (submission: TeamSubmission) => {
     if (!submission.expert_assignments || submission.expert_assignments.length === 0) {
-      return '待分配专家';
+      return t[language].pendingExpert;
     }
     
     const completed = submission.expert_assignments.filter(a => a.assignment_status === 'completed').length;
@@ -296,12 +320,12 @@ export default function TeamDashboard() {
                 <p className="font-medium">{teamInfo?.contactEmail}</p>
               </div>
               <div>
-                <span className="text-sm text-gray-500">联系人:</span>
-                <p className="font-medium">{teamInfo?.contactPerson || '未填写'}</p>
+                <span className="text-sm text-gray-500">{t[language].contactPerson}:</span>
+                <p className="font-medium">{teamInfo?.contactPerson || t[language].notFilled}</p>
               </div>
               <div>
-                <span className="text-sm text-gray-500">联系电话:</span>
-                <p className="font-medium">{teamInfo?.contactPhone || '未填写'}</p>
+                <span className="text-sm text-gray-500">{t[language].contactPhone}:</span>
+                <p className="font-medium">{teamInfo?.contactPhone || t[language].notFilled}</p>
               </div>
             </div>
           </div>
@@ -335,13 +359,13 @@ export default function TeamDashboard() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                           <div>
-                            <p><span className="font-medium">文件名:</span> {submission.original_name}</p>
-                            <p><span className="font-medium">文件类型:</span> {submission.mime_type}</p>
+                            <p><span className="font-medium">{t[language].fileName}:</span> {submission.original_name}</p>
+                            <p><span className="font-medium">{t[language].fileType}:</span> {submission.mime_type}</p>
                           </div>
                           <div>
-                            <p><span className="font-medium">提交时间:</span> {new Date(submission.created_at).toLocaleString()}</p>
-                            <p><span className="font-medium">评审状态:</span> {getReviewStatusText(submission)}</p>
-                            <p><span className="font-medium">文档ID:</span> #{submission.id}</p>
+                            <p><span className="font-medium">{t[language].submissionTime}:</span> {new Date(submission.created_at).toLocaleString()}</p>
+                            <p><span className="font-medium">{t[language].reviewStatus}:</span> {getReviewStatusText(submission)}</p>
+                            <p><span className="font-medium">{t[language].documentId}:</span> #{submission.id}</p>
                           </div>
                         </div>
                       </div>

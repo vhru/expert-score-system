@@ -253,51 +253,59 @@ export async function POST(request: NextRequest) {
         // 创建工作簿
         const workbook = XLSX.utils.book_new();
         
-        // 团队基本信息
+        // 团队基本信息 - 根据报名表完整信息
         const teamInfoData = [
+          // 1. 参赛项目信息
+          ['=== 1. 参赛项目信息 ===', ''],
           ['项目名称', basicInfo.projectName || ''],
-          ['项目简介', basicInfo.projectBrief || ''],
-          ['项目阶段', basicInfo.projectStage || ''],
-          ['项目阶段其他', basicInfo.projectStageOthers || ''],
           ['核心成员国籍', basicInfo.coreMembersNationality || ''],
           ['国籍类型', basicInfo.nationalityType || ''],
           ['选择的国家', basicInfo.selectedCountries?.join(', ') || ''],
           ['其他国籍', basicInfo.nationalityOthers || ''],
+          ['项目简介', basicInfo.projectBrief || ''],
+          ['项目阶段', basicInfo.projectStage || ''],
+          ['项目阶段其他', basicInfo.projectStageOthers || ''],
+          ['', ''],
+          // 2. 项目联系人信息
+          ['=== 2. 项目联系人信息 ===', ''],
+          ['联系人姓名', contactInfo.contactPersonName || ''],
+          ['联系人职位', contactInfo.contactPersonPosition || ''],
+          ['联系人电话', contactInfo.contactPersonPhone || ''],
+          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
+          ['', ''],
+          // 3. 系统信息
+          ['=== 3. 系统信息 ===', ''],
           ['团队类型', '团队组'],
           ['注册时间', new Date().toLocaleString()],
-          ['团队ID', teamId]
+          ['团队ID', teamId],
+          ['联系邮箱', contactInfo.contactPersonEmail || '']
         ];
         const teamInfoSheet = XLSX.utils.aoa_to_sheet(teamInfoData);
         XLSX.utils.book_append_sheet(workbook, teamInfoSheet, '团队信息');
         
-        // 联系信息
-        const contactData = [
-          ['联系人姓名', contactInfo.contactPersonName || ''],
-          ['联系人职位', contactInfo.contactPersonPosition || ''],
-          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
-          ['联系人电话', contactInfo.contactPersonPhone || '']
+        // 核心成员信息 - 根据报名表完整信息
+        const memberHeaders = [
+          '成员序号', '姓名', '国籍', '性别', '出生年月', 
+          '证件类型', '证件号码', '电话', '电子邮箱', 
+          '毕业院校', '最高学历', '所在单位', '职务/职称', '简历'
         ];
-        const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
-        XLSX.utils.book_append_sheet(workbook, contactSheet, '联系信息');
-        
-        // 核心成员信息
-        const memberHeaders = ['成员序号', '姓名', '国籍', '性别', '出生日期', '证件类型', '证件号码', '电话', '邮箱', '大学', '最高学历', '组织', '职位'];
         const memberData = [memberHeaders];
         coreMembers.forEach((member, index) => {
           memberData.push([
             index + 1,
-            member.name,
-            member.nationality,
-            member.gender,
-            member.birthDate,
-            member.idType,
-            member.idNumber,
-            member.phone,
-            member.email,
-            member.university,
-            member.highestDegree,
-            member.organization,
-            member.position
+            member.name || '',
+            member.nationality || '',
+            member.gender || '',
+            member.birthDate || '',
+            member.idType || '',
+            member.idNumber || '',
+            member.phone || '',
+            member.email || '',
+            member.university || '',
+            member.highestDegree || '',
+            member.organization || '',
+            member.position || '',
+            member.cv ? '已上传' : '未上传'
           ]);
         });
         const memberSheet = XLSX.utils.aoa_to_sheet(memberData);

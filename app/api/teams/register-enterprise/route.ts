@@ -248,62 +248,73 @@ export async function POST(request: NextRequest) {
         // 创建工作簿
         const workbook = XLSX.utils.book_new();
         
-        // 项目基本信息
+        // 项目基本信息 - 根据报名表完整信息
         const projectInfoData = [
+          // 1. 参赛项目信息
+          ['=== 1. 参赛项目信息 ===', ''],
           ['项目名称', basicInfo.projectName || ''],
+          ['企业注册国家', basicInfo.registrationCountry || ''],
           ['项目简介', basicInfo.projectBrief || ''],
           ['项目阶段', basicInfo.projectStage || ''],
           ['项目阶段其他', basicInfo.projectStageOthers || ''],
-          ['注册国家', basicInfo.registrationCountry || ''],
+          ['', ''],
+          // 2. 项目联系人信息
+          ['=== 2. 项目联系人信息 ===', ''],
+          ['联系人姓名', contactInfo.contactPersonName || ''],
+          ['联系人职位', contactInfo.contactPersonPosition || ''],
+          ['联系人电话', contactInfo.contactPersonPhone || ''],
+          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
+          ['', ''],
+          // 3. 系统信息
+          ['=== 3. 系统信息 ===', ''],
           ['团队类型', '企业组'],
           ['注册时间', new Date().toLocaleString()],
-          ['团队ID', teamId]
+          ['团队ID', teamId],
+          ['联系邮箱', contactInfo.contactPersonEmail || '']
         ];
         const projectInfoSheet = XLSX.utils.aoa_to_sheet(projectInfoData);
         XLSX.utils.book_append_sheet(workbook, projectInfoSheet, '项目信息');
         
-        // 企业信息
+        // 企业信息 - 根据报名表完整信息
         const enterpriseData = [
+          ['=== 3. 企业信息 ===', ''],
           ['企业名称', enterpriseInfo.enterpriseName || ''],
           ['统一社会信用代码', enterpriseInfo.unifiedSocialCreditCode || ''],
           ['注册年份', enterpriseInfo.registrationYear || ''],
+          ['营业执照', enterpriseInfo.businessLicense ? '已上传' : '未上传'],
           ['法定代表人', enterpriseInfo.legalRepresentative || ''],
-          ['总部位置', enterpriseInfo.headquartersLocation || ''],
-          ['注册资本(USD)', enterpriseInfo.registeredCapitalUsd || ''],
+          ['总部所在地', enterpriseInfo.headquartersLocation || ''],
+          ['注册资本(美元)', enterpriseInfo.registeredCapitalUsd || ''],
           ['电话', enterpriseInfo.phone || ''],
-          ['网站', enterpriseInfo.website || '']
+          ['网站', enterpriseInfo.website || ''],
+          ['企业简介', enterpriseInfo.enterpriseOverview || '']
         ];
         const enterpriseSheet = XLSX.utils.aoa_to_sheet(enterpriseData);
         XLSX.utils.book_append_sheet(workbook, enterpriseSheet, '企业信息');
         
-        // 联系信息
-        const contactData = [
-          ['联系人姓名', contactInfo.contactPersonName || ''],
-          ['联系人职位', contactInfo.contactPersonPosition || ''],
-          ['联系人邮箱', contactInfo.contactPersonEmail || ''],
-          ['联系人电话', contactInfo.contactPersonPhone || '']
+        // 核心成员信息 - 根据报名表完整信息
+        const memberHeaders = [
+          '成员序号', '姓名', '国籍', '性别', '出生年月', 
+          '证件类型', '证件号码', '电话', '电子邮箱', 
+          '毕业院校', '最高学历', '所在单位', '职务/职称', '简历'
         ];
-        const contactSheet = XLSX.utils.aoa_to_sheet(contactData);
-        XLSX.utils.book_append_sheet(workbook, contactSheet, '联系信息');
-        
-        // 核心成员信息
-        const memberHeaders = ['成员序号', '姓名', '国籍', '性别', '出生日期', '证件类型', '证件号码', '电话', '邮箱', '大学', '最高学历', '组织', '职位'];
         const memberData = [memberHeaders];
         coreMembers.forEach((member, index) => {
           memberData.push([
             index + 1,
-            member.name,
-            member.nationality,
-            member.gender,
-            member.birthDate,
-            member.idType,
-            member.idNumber,
-            member.phone,
-            member.email,
-            member.university,
-            member.highestDegree,
-            member.organization,
-            member.position
+            member.name || '',
+            member.nationality || '',
+            member.gender || '',
+            member.birthDate || '',
+            member.idType || '',
+            member.idNumber || '',
+            member.phone || '',
+            member.email || '',
+            member.university || '',
+            member.highestDegree || '',
+            member.organization || '',
+            member.position || '',
+            member.cv ? '已上传' : '未上传'
           ]);
         });
         const memberSheet = XLSX.utils.aoa_to_sheet(memberData);
