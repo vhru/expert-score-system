@@ -567,6 +567,15 @@ export const dbOperations = {
           else resolve(row);
         });
       });
+    },
+    
+    delete: (id: number): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM review_assignments WHERE id = ?', [id], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
     }
   },
   

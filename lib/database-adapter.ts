@@ -86,6 +86,12 @@ const mysqlOperations = {
       return rows;
     },
     
+    async findById(id: number) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [id]);
+      return Array.isArray(rows) ? rows[0] : null;
+    },
+    
     async update(id: number, updateData: any) {
       const pool = getMysqlPool();
       const fields = [];
@@ -232,7 +238,7 @@ const mysqlOperations = {
     async create(fileId: number, expertId: number) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'INSERT INTO review_assignments (file_id, expert_id, status) VALUES (?, ?, ?)',
+        'INSERT INTO review_assignments (file_id, expert_id, assignment_status) VALUES (?, ?, ?)',
         [fileId, expertId, 'assigned']
       );
       return result;
@@ -300,6 +306,12 @@ const mysqlOperations = {
         ORDER BY ra.created_at DESC
       `);
       return rows;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM review_assignments WHERE id = ?', [id]);
+      return result;
     }
   },
   
@@ -447,6 +459,14 @@ export const dbOperations = {
         return await mysqlOperations.users.findAll();
       } else {
         return sqliteOperations.users.findAll();
+      }
+    },
+    
+    async findById(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.users.findById(id);
+      } else {
+        return sqliteOperations.users.findById(id);
       }
     },
     
@@ -613,6 +633,14 @@ export const dbOperations = {
         return await mysqlOperations.assignments.findAll();
       } else {
         return sqliteOperations.assignments.findAll();
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.delete(id);
+      } else {
+        return sqliteOperations.assignments.delete(id);
       }
     }
   },

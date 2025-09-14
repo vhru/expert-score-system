@@ -65,32 +65,32 @@ export async function DELETE(
     // 2. 删除数据库中的关联数据
     try {
       // 删除团队图片
-      const teamImages = await dbOperations.teamImages.findByTeamId(teamId);
+      const teamImages = await dbOperations.teamImages.findByTeam(teamId);
       for (const image of teamImages) {
         await dbOperations.teamImages.delete(image.id);
       }
       console.log(`✅ 删除团队图片记录: ${teamImages.length} 个`);
 
       // 删除团队文档
-      const teamDocuments = await dbOperations.teamDocuments.findByTeamId(teamId);
+      const teamDocuments = await dbOperations.teamDocuments.findByTeam(teamId);
       for (const document of teamDocuments) {
         await dbOperations.teamDocuments.delete(document.id);
       }
       console.log(`✅ 删除团队文档记录: ${teamDocuments.length} 个`);
 
       // 删除核心成员
-      const coreMembers = await dbOperations.coreMembers.findByTeamId(teamId);
+      const coreMembers = await dbOperations.coreMembers.findByTeam(teamId);
       for (const member of coreMembers) {
         await dbOperations.coreMembers.delete(member.id);
       }
       console.log(`✅ 删除核心成员记录: ${coreMembers.length} 个`);
 
-      // 删除评审记录
-      const reviews = await dbOperations.reviews.findByTeamId(teamId);
-      for (const review of reviews) {
-        await dbOperations.reviews.delete(review.id);
+      // 删除评审分配记录
+      const assignments = await dbOperations.assignments.findByFile(teamId);
+      for (const assignment of assignments) {
+        await dbOperations.assignments.delete(assignment.id);
       }
-      console.log(`✅ 删除评审记录: ${reviews.length} 个`);
+      console.log(`✅ 删除评审分配记录: ${assignments.length} 个`);
 
     } catch (error) {
       console.error('删除关联数据失败:', error);
