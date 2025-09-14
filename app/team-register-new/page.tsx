@@ -179,7 +179,18 @@ export default function TeamRegisterPage() {
         body: formData,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorResult = await response.json();
+        console.error('Registration failed:', errorResult);
+        setError(errorResult.error || '注册失败');
+        return;
+      }
+
       const result = await response.json();
+      console.log('Registration result:', result);
 
       if (result.success) {
         alert(t('teamRegister.success'));

@@ -1,6 +1,8 @@
-const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+
+// 使用Node.js内置的fetch和FormData
+const { FormData } = require('form-data');
 
 // 测试文件上传功能
 async function testFileUpload() {
