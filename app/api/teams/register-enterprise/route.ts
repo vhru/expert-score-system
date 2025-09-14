@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         const cvFile = formData.get(`memberCv_${i}`) as File;
         if (cvFile) {
           try {
-            const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'member-cvs');
+            const uploadDir = path.join('/opt/team_data/team_data', 'member-cvs');
             await mkdir(uploadDir, { recursive: true });
             const fileExtension = path.extname(cvFile.name);
             const fileName = `${teamId}_member_${i + 1}_${Date.now()}${fileExtension}`;
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
           try {
             // 使用新的文件夹结构：项目名_联系邮箱_企业组/documents
             const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-            const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
+            const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
             const documentsDir = path.join(teamDir, 'documents');
             await mkdir(documentsDir, { recursive: true });
             const fileExtension = path.extname(file.name);
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
         try {
           // 使用新的文件夹结构：项目名_联系邮箱_企业组/images
           const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-          const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
+          const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
           const imagesDir = path.join(teamDir, 'images');
           await mkdir(imagesDir, { recursive: true });
           const fileExtension = path.extname(file.name);
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
       console.log('📊 开始保存企业表单信息到Excel...');
       try {
         const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-        const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
+        const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_企业组`);
         const documentsDir = path.join(teamDir, 'documents');
         await mkdir(documentsDir, { recursive: true });
         
