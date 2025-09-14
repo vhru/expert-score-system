@@ -132,6 +132,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // 获取团队信息用于文件夹命名
+      const teamInfo = await dbOperations.teams.findById(teamId);
+      const teamName = teamInfo?.team_name || `team_${teamId}`;
+      const safeTeamName = teamName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_'); // 清理特殊字符
+
       // 保存文档
       const documentTypes = [
         'businessLicense',
@@ -177,13 +182,18 @@ export async function POST(request: NextRequest) {
       // 收集所有图片文件
       const imageFiles: { file: File; type: string; memberIndex?: number }[] = [];
       
-      // 1. 核心成员证件照
+      // 1. 从FormData中获取核心成员图片
       coreMembers.forEach((member, index) => {
-        if (member.idPhoto) {
-          imageFiles.push({ file: member.idPhoto, type: 'idPhoto', memberIndex: index });
+        // 获取证件照
+        const idPhotoFile = formData.get(`memberIdPhoto_${index}`) as File;
+        if (idPhotoFile) {
+          imageFiles.push({ file: idPhotoFile, type: 'idPhoto', memberIndex: index });
         }
-        if (member.cv) {
-          imageFiles.push({ file: member.cv, type: 'cv', memberIndex: index });
+        
+        // 获取CV文件
+        const cvFile = formData.get(`memberCv_${index}`) as File;
+        if (cvFile) {
+          imageFiles.push({ file: cvFile, type: 'cv', memberIndex: index });
         }
       });
       
@@ -196,7 +206,7 @@ export async function POST(request: NextRequest) {
         console.log(`📷 处理图片: ${type}_${memberIndex}, 文件名: ${file.name}, 大小: ${file.size}`);
         try {
           // 为每个团队创建单独的子文件夹
-          const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', `team_${teamId}`);
+          const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', safeTeamName);
           await mkdir(teamDir, { recursive: true });
           const fileExtension = path.extname(file.name);
           // 文件名包含团队ID、邮箱前缀、类型和成员索引
@@ -226,7 +236,7 @@ export async function POST(request: NextRequest) {
       // 保存企业表单信息到Excel文件
       console.log('📊 开始保存企业表单信息到Excel...');
       try {
-        const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', `team_${teamId}`);
+        const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', safeTeamName);
         await mkdir(teamDir, { recursive: true });
         
         // 导入Excel库
@@ -296,7 +306,10 @@ export async function POST(request: NextRequest) {
         // 保存Excel文件
         const excelFileName = `${teamId}_${contactInfo.contactPersonEmail.split('@')[0]}_enterprise_info_${Date.now()}.xlsx`;
         const excelFilePath = path.join(teamDir, excelFileName);
-        XLSX.writeFile(workbook, excelFilePath);
+        
+        // 使用writeFile而不是XLSX.writeFile
+        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        await writeFile(excelFilePath, excelBuffer);
         
         console.log(`📊 Excel信息保存成功: ${excelFilePath}`);
       } catch (error) {

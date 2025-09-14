@@ -849,6 +849,7 @@ export async function initDatabase() {
         file_size INT NOT NULL,
         mime_type VARCHAR(100) NOT NULL,
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (team_id) REFERENCES teams(id)
       )
     `);
@@ -867,6 +868,14 @@ export async function initDatabase() {
     } catch (error) {
       if (!error.message.includes('Duplicate column name')) {
         console.warn('Warning: Could not add file_size column:', error.message);
+      }
+    }
+    
+    try {
+      await pool.execute(`ALTER TABLE team_documents ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        console.warn('Warning: Could not add updated_at column:', error.message);
       }
     }
     
