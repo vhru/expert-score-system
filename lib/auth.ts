@@ -64,6 +64,13 @@ export function verifyToken(token: string): User | null {
 
 export async function createExpert(username: string, password: string, encryptedInfo: string, expertType: string = 'team'): Promise<boolean> {
   try {
+    // 检查用户名是否已存在
+    const existingUser = await dbOperations.users.findByUsername(username);
+    if (existingUser) {
+      console.log(`Expert ${username} already exists, skipping creation`);
+      return false;
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await dbOperations.users.create(username, hashedPassword, 'expert', encryptedInfo, expertType);

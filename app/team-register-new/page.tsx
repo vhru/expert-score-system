@@ -181,6 +181,7 @@ export default function TeamRegisterPage() {
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorResult = await response.json();
