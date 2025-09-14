@@ -21,9 +21,6 @@ export default function PortalPage() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                安全 · 高效 · 公正
-              </div>
               <LanguageSwitcherNew />
             </div>
           </div>

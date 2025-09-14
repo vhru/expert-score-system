@@ -46,10 +46,10 @@ export async function GET(
     const teamInfo = JSON.parse(decryptData(team.encrypted_info));
 
     // 生成ZIP文件名
-    const teamType = team.is_enterprise ? '企业组' : '团队组';
+    const teamTypeSuffix = team.is_enterprise ? '企业组' : '团队组';
     const safeTeamName = team.team_name.replace(/[^\w\u4e00-\u9fa5]/g, '_');
     const safeContact = team.contact_email.replace(/[^\w@.-]/g, '_');
-    const zipFileName = `${safeTeamName}_${safeContact}_${teamType}.zip`;
+    const zipFileName = `${safeTeamName}_${safeContact}_${teamTypeSuffix}.zip`;
 
     // 创建ZIP流
     const archive = archiver('zip', {
@@ -81,72 +81,64 @@ export async function GET(
       }
     });
 
-    // 添加文档到ZIP
-    for (const doc of documents as any[]) {
-      // 处理路径：统一处理为正确的文件路径
-      let filePath;
-      if (doc.document_path.startsWith('uploads/')) {
-        // 相对路径，直接拼接
-        filePath = path.join(process.cwd(), doc.document_path);
-      } else if (path.isAbsolute(doc.document_path)) {
-        // 绝对路径，直接使用
-        filePath = doc.document_path;
-      } else {
-        // 其他情况，尝试直接拼接
-        filePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', doc.document_path);
-      }
-      
-      // 检查文件是否存在
-      if (!fs.existsSync(filePath)) {
-        console.warn(`文件不存在: ${filePath}`);
-        continue;
-      }
-
-      // 生成规范的文件名
-      const documentTypeMap: { [key: string]: string } = {
-        'commitmentLetter': '承诺书',
-        'presentation': '项目展示',
-        'supplementaryMaterials': '补充材料',
-        'technicalInfo': '技术信息',
-        'businessLicense': '营业执照',
-        'businessPlan': '商业计划书'
-      };
-
-      const typeName = documentTypeMap[doc.document_type] || doc.document_type;
-      const fileExtension = path.extname(doc.document_name);
-      const newFileName = `${typeName}_${doc.id}${fileExtension}`;
-
-      // 添加文件到ZIP
-      archive.file(filePath, { name: newFileName });
-    }
-
-    // 添加团队图片到ZIP
-    try {
-      const images = await dbOperations.teamImages.findByTeam(teamId);
-      if (Array.isArray(images) && images.length > 0) {
-        for (const image of images as any[]) {
-          // 处理图片路径
-          let imagePath;
-          if (image.image_path.startsWith('uploads/')) {
-            imagePath = path.join(process.cwd(), image.image_path);
-          } else if (path.isAbsolute(image.image_path)) {
-            imagePath = image.image_path;
-          } else {
-            imagePath = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', image.image_path);
-          }
-          
-          // 检查图片是否存在
-          if (fs.existsSync(imagePath)) {
-            const fileExtension = path.extname(image.image_name);
-            const newImageName = `图片_${image.id}_${image.image_name}`;
-            archive.file(imagePath, { name: `images/${newImageName}` });
-          } else {
-            console.warn(`图片不存在: ${imagePath}`);
+    // 直接扫描团队文件夹，不需要数据库查询
+    const teamName = team.team_name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+    const contactEmail = team.contact_email.replace(/[^a-zA-Z0-9@.-]/g, '_');
+    const teamFolder = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${teamName}_${contactEmail}_${teamTypeSuffix}`);
+    
+    console.log('扫描团队文件夹:', teamFolder);
+    
+    // 检查团队文件夹是否存在
+    if (fs.existsSync(teamFolder)) {
+      // 添加文档文件夹中的所有文件
+      const documentsFolder = path.join(teamFolder, 'documents');
+      if (fs.existsSync(documentsFolder)) {
+        const documentFiles = fs.readdirSync(documentsFolder);
+        console.log('找到文档文件:', documentFiles);
+        
+        for (const fileName of documentFiles) {
+          const filePath = path.join(documentsFolder, fileName);
+          if (fs.statSync(filePath).isFile()) {
+            // 生成友好的文件名
+            let friendlyName = fileName;
+            if (fileName.includes('commitmentLetter')) friendlyName = fileName.replace(/.*commitmentLetter.*/, '承诺书.pdf');
+            else if (fileName.includes('technicalInfoChinese')) friendlyName = fileName.replace(/.*technicalInfoChinese.*/, '技术信息_中文.pdf');
+            else if (fileName.includes('technicalInfoEnglish')) friendlyName = fileName.replace(/.*technicalInfoEnglish.*/, '技术信息_英文.pdf');
+            else if (fileName.includes('presentation')) friendlyName = fileName.replace(/.*presentation.*/, '项目展示.pdf');
+            else if (fileName.includes('supplementaryMaterials')) friendlyName = fileName.replace(/.*supplementaryMaterials.*/, '补充材料.pdf');
+            else if (fileName.includes('team_info')) friendlyName = fileName.replace(/.*team_info.*/, '团队信息.xlsx');
+            
+            archive.file(filePath, { name: `documents/${friendlyName}` });
+            console.log('添加文档到ZIP:', fileName, '->', friendlyName);
           }
         }
       }
-    } catch (error) {
-      console.warn('添加图片到ZIP时出错:', error);
+      
+      // 添加图片文件夹中的所有文件
+      const imagesFolder = path.join(teamFolder, 'images');
+      if (fs.existsSync(imagesFolder)) {
+        const imageFiles = fs.readdirSync(imagesFolder);
+        console.log('找到图片文件:', imageFiles);
+        
+        for (const fileName of imageFiles) {
+          const filePath = path.join(imagesFolder, fileName);
+          if (fs.statSync(filePath).isFile()) {
+            // 生成友好的文件名
+            let friendlyName = fileName;
+            if (fileName.includes('idPhoto')) {
+              const match = fileName.match(/idPhoto_(\d+)/);
+              if (match) {
+                friendlyName = `身份证照片_${match[1]}${path.extname(fileName)}`;
+              }
+            }
+            
+            archive.file(filePath, { name: `images/${friendlyName}` });
+            console.log('添加图片到ZIP:', fileName, '->', friendlyName);
+          }
+        }
+      }
+    } else {
+      console.warn('团队文件夹不存在:', teamFolder);
     }
 
     // 添加团队信息文件
@@ -155,7 +147,7 @@ export async function GET(
 
 团队名称: ${team.team_name}
 联系邮箱: ${team.contact_email}
-团队类型: ${teamType}
+团队类型: ${teamTypeSuffix}
 注册时间: ${new Date(team.created_at).toLocaleString()}
 审核状态: ${team.audit_status || 'pending'}
 

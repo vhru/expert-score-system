@@ -26,11 +26,6 @@ export default function RootLayout({
                   <h1 className="text-xl font-semibold text-gray-900">
                     专家盲审系统
                   </h1>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-500">
-                      安全 · 高效 · 公正
-                    </span>
-                  </div>
                 </div>
               </div>
             </header>

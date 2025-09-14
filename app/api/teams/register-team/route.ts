@@ -142,24 +142,28 @@ export async function POST(request: NextRequest) {
         if (file) {
           console.log(`📄 处理文档: ${docType}, 文件名: ${file.name}, 大小: ${file.size}`);
           try {
-            // 为每个团队创建单独的子文件夹
-            const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents', safeTeamName);
-            await mkdir(teamDir, { recursive: true });
+            // 使用新的文件夹结构：项目名_联系邮箱_团队组/documents
+            const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+            const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+            const documentsDir = path.join(teamDir, 'documents');
+            await mkdir(documentsDir, { recursive: true });
             const fileExtension = path.extname(file.name);
             // 文件名包含团队ID、文档类型、邮箱前缀和时间戳
             const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
             const fileName = `${teamId}_${emailPrefix}_${docType}_${Date.now()}${fileExtension}`;
-            const filePath = path.join(teamDir, fileName);
+            const filePath = path.join(documentsDir, fileName);
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
 
             console.log(`💾 文件保存成功: ${filePath}`);
 
+            // 保存相对路径到数据库
+            const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/documents/${fileName}`;
             const docResult = await dbOperations.teamDocuments.create(
               teamId,
               docType,
-              filePath,
+              relativePath,
               file.size,
               file.name,
               file.type
@@ -205,24 +209,28 @@ export async function POST(request: NextRequest) {
         }
         console.log(`📷 处理图片: ${type}_${memberIndex}, 文件名: ${file.name}, 大小: ${file.size}`);
         try {
-          // 为每个团队创建单独的子文件夹
-          const teamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-images', safeTeamName);
-          await mkdir(teamDir, { recursive: true });
+          // 使用新的文件夹结构：项目名_联系邮箱_团队组/images
+          const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+          const imageTeamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+          const imagesDir = path.join(imageTeamDir, 'images');
+          await mkdir(imagesDir, { recursive: true });
           const fileExtension = path.extname(file.name);
           // 文件名包含团队ID、邮箱前缀、类型和成员索引
           const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
           const fileName = `${teamId}_${emailPrefix}_${type}_${memberIndex}_${Date.now()}${fileExtension}`;
-          const filePath = path.join(teamDir, fileName);
+          const filePath = path.join(imagesDir, fileName);
           const bytes = await file.arrayBuffer();
           const buffer = Buffer.from(bytes);
           await writeFile(filePath, buffer);
 
           console.log(`💾 图片保存成功: ${filePath}`);
 
+          // 保存相对路径到数据库
+          const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/images/${fileName}`;
           const imageResult = await dbOperations.teamImages.create(
             teamId,
             file.name,
-            filePath,
+            relativePath,
             file.size
           );
           console.log(`🗄️ 图片数据库记录创建成功:`, imageResult);
@@ -292,15 +300,31 @@ export async function POST(request: NextRequest) {
         const memberSheet = XLSX.utils.aoa_to_sheet(memberData);
         XLSX.utils.book_append_sheet(workbook, memberSheet, '核心成员');
         
-        // 保存Excel文件
+        // 保存Excel文件到documents文件夹
+        const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+        const excelTeamDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+        const documentsDir = path.join(excelTeamDir, 'documents');
+        await mkdir(documentsDir, { recursive: true });
+        
         const excelFileName = `${teamId}_${contactInfo.contactPersonEmail.split('@')[0]}_team_info_${Date.now()}.xlsx`;
-        const excelFilePath = path.join(teamDir, excelFileName);
+        const excelFilePath = path.join(documentsDir, excelFileName);
         
         // 使用writeFile而不是XLSX.writeFile
         const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
         await writeFile(excelFilePath, excelBuffer);
         
         console.log(`📊 Excel信息保存成功: ${excelFilePath}`);
+        
+        // 将Excel文件也保存到数据库
+        const relativeExcelPath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/documents/${excelFileName}`;
+        await dbOperations.teamDocuments.create(
+          teamId,
+          'teamInfo',
+          relativeExcelPath,
+          excelBuffer.length,
+          excelFileName,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
       } catch (error) {
         console.error('❌ 保存Excel信息失败:', error);
       }

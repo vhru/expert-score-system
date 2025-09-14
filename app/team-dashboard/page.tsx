@@ -26,6 +26,57 @@ export default function TeamDashboard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [language, setLanguage] = useState<'zh' | 'en'>('zh');
+
+  // 翻译文本
+  const t = {
+    zh: {
+      title: '团队管理后台',
+      submitNew: '提交新作品',
+      logout: '退出登录',
+      teamInfo: '团队信息',
+      updateForm: '更新表单信息',
+      teamName: '团队名称',
+      contactEmail: '联系邮箱',
+      submissions: '作品提交记录',
+      noSubmissions: '暂无提交记录',
+      noSubmissionsDesc: '您还没有提交任何作品。',
+      download: '下载',
+      update: '更新',
+      lastUpdate: '最后更新',
+      images: '团队图片',
+      noImages: '暂无图片',
+      noImagesDesc: '您还没有上传任何图片。',
+      uploadTime: '上传时间',
+      fileSize: '文件大小',
+      switchLanguage: 'English'
+    },
+    en: {
+      title: 'Team Dashboard',
+      submitNew: 'Submit New Work',
+      logout: 'Logout',
+      teamInfo: 'Team Information',
+      updateForm: 'Update Form',
+      teamName: 'Team Name',
+      contactEmail: 'Contact Email',
+      submissions: 'Submission Records',
+      noSubmissions: 'No Submissions',
+      noSubmissionsDesc: 'You have not submitted any work yet.',
+      download: 'Download',
+      update: 'Update',
+      lastUpdate: 'Last Updated',
+      images: 'Team Images',
+      noImages: 'No Images',
+      noImagesDesc: 'You have not uploaded any images yet.',
+      uploadTime: 'Upload Time',
+      fileSize: 'File Size',
+      switchLanguage: '中文'
+    }
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'zh' ? 'en' : 'zh');
+  };
 
   useEffect(() => {
     // 检查登录状态
@@ -176,25 +227,31 @@ export default function TeamDashboard() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-xl font-semibold text-gray-900">
-              团队管理后台 - {teamInfo?.teamName}
-            </h1>
-            <div className="flex items-center space-x-4">
-              <a 
-                href="/team-submit" 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                提交新作品
-              </a>
-              <button
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-              >
-                退出登录
-              </button>
+            <div className="flex justify-between items-center py-4">
+              <h1 className="text-xl font-semibold text-gray-900">
+                {t[language].title} - {teamInfo?.teamName}
+              </h1>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={toggleLanguage}
+                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                >
+                  {t[language].switchLanguage}
+                </button>
+                <a 
+                  href="/team-submit" 
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  {t[language].submitNew}
+                </a>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                >
+                  {t[language].logout}
+                </button>
+              </div>
             </div>
-          </div>
         </div>
       </header>
 
@@ -203,21 +260,21 @@ export default function TeamDashboard() {
           {/* 团队信息卡片 */}
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">团队信息</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t[language].teamInfo}</h2>
               <button
                 onClick={handleUpdateForm}
                 className="btn-primary text-sm"
               >
-                更新表单信息
+                {t[language].updateForm}
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-sm text-gray-500">团队名称:</span>
+                <span className="text-sm text-gray-500">{t[language].teamName}:</span>
                 <p className="font-medium">{teamInfo?.teamName}</p>
               </div>
               <div>
-                <span className="text-sm text-gray-500">联系邮箱:</span>
+                <span className="text-sm text-gray-500">{t[language].contactEmail}:</span>
                 <p className="font-medium">{teamInfo?.contactEmail}</p>
               </div>
               <div>
@@ -234,14 +291,14 @@ export default function TeamDashboard() {
           {/* 作品提交记录 */}
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-medium text-gray-900">作品提交记录</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t[language].submissions}</h2>
             </div>
 
             {submissions.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 text-6xl mb-4">📁</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">暂无提交记录</h3>
-                <p className="text-gray-500">您还没有提交任何作品。</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t[language].noSubmissions}</h3>
+                <p className="text-gray-500">{t[language].noSubmissionsDesc}</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -280,7 +337,7 @@ export default function TeamDashboard() {
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        下载文档
+                        {t[language].download}
                       </button>
                       
                       <button
@@ -290,12 +347,12 @@ export default function TeamDashboard() {
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        更新文档
+                        {t[language].update}
                       </button>
                       
                       
                       <span className="text-xs text-gray-500">
-                        最后更新: {new Date(submission.updated_at).toLocaleString()}
+                        {t[language].lastUpdate}: {new Date(submission.updated_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
