@@ -211,6 +211,56 @@ export const dbOperations = {
       });
     },
     
+    update: (id: number, updateData: any): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        const fields = [];
+        const values = [];
+        
+        if (updateData.username) {
+          fields.push('username = ?');
+          values.push(updateData.username);
+        }
+        if (updateData.password) {
+          fields.push('password = ?');
+          values.push(updateData.password);
+        }
+        if (updateData.encrypted_info !== undefined) {
+          fields.push('encrypted_info = ?');
+          values.push(updateData.encrypted_info);
+        }
+        if (updateData.expert_type) {
+          fields.push('expert_type = ?');
+          values.push(updateData.expert_type);
+        }
+        
+        if (fields.length === 0) {
+          resolve({ changes: 0 });
+          return;
+        }
+        
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(id);
+        
+        db.run(
+          `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+          values,
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
+      });
+    },
+    
+    delete: (id: number): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
+    },
+    
     findById: (id: number): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {

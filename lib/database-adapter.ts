@@ -84,6 +84,48 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM users ORDER BY created_at DESC');
       return rows;
+    },
+    
+    async update(id: number, updateData: any) {
+      const pool = getMysqlPool();
+      const fields = [];
+      const values = [];
+      
+      if (updateData.username) {
+        fields.push('username = ?');
+        values.push(updateData.username);
+      }
+      if (updateData.password) {
+        fields.push('password = ?');
+        values.push(updateData.password);
+      }
+      if (updateData.encrypted_info !== undefined) {
+        fields.push('encrypted_info = ?');
+        values.push(updateData.encrypted_info);
+      }
+      if (updateData.expert_type) {
+        fields.push('expert_type = ?');
+        values.push(updateData.expert_type);
+      }
+      
+      if (fields.length === 0) {
+        return { changes: 0 };
+      }
+      
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+      
+      const [result] = await pool.execute(
+        `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+        values
+      );
+      return result;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [id]);
+      return result;
     }
   },
   
@@ -315,6 +357,22 @@ export const dbOperations = {
         return await mysqlOperations.users.findAll();
       } else {
         return sqliteOperations.users.findAll();
+      }
+    },
+    
+    async update(id: number, updateData: any) {
+      if (useMySQL()) {
+        return await mysqlOperations.users.update(id, updateData);
+      } else {
+        return sqliteOperations.users.update(id, updateData);
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.users.delete(id);
+      } else {
+        return sqliteOperations.users.delete(id);
       }
     }
   },

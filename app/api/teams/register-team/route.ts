@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       basicInfo.nationalityOthers // 其他国籍说明
     );
 
-    if (result.changes > 0) {
-      const teamId = result.lastInsertRowid;
+    if (result.changes > 0 || result.affectedRows > 0) {
+      const teamId = result.lastInsertRowid || result.insertId;
 
       // 保存核心成员信息
       for (let i = 0; i < coreMembers.length; i++) {
