@@ -46,7 +46,7 @@ export async function GET(
     const teamInfo = JSON.parse(decryptData(team.encrypted_info));
 
     // 生成ZIP文件名
-    const teamTypeSuffix = team.is_enterprise ? '企业组' : '团队组';
+    const teamTypeSuffix = team.is_enterprise ? 'enterprise' : 'team';
     const safeTeamName = team.team_name.replace(/[^\w\u4e00-\u9fa5]/g, '_');
     const safeContact = team.contact_email.replace(/[^\w@.-]/g, '_');
     const zipFileName = `${safeTeamName}_${safeContact}_${teamTypeSuffix}.zip`;

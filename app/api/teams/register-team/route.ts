@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
           try {
             // 使用新的文件夹结构：项目名_联系邮箱_团队组/documents
             const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-            const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+            const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
             const documentsDir = path.join(teamDir, 'documents');
             await mkdir(documentsDir, { recursive: true });
             const fileExtension = path.extname(file.name);
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
             console.log(`💾 文件保存成功: ${filePath}`);
 
             // 保存相对路径到数据库
-            const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/documents/${fileName}`;
+            const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_team/documents/${fileName}`;
             const docResult = await dbOperations.teamDocuments.create(
               teamId,
               docType,
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
         try {
           // 使用新的文件夹结构：项目名_联系邮箱_团队组/images
           const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-          const imageTeamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+          const imageTeamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
           const imagesDir = path.join(imageTeamDir, 'images');
           await mkdir(imagesDir, { recursive: true });
           const fileExtension = path.extname(file.name);
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
           console.log(`💾 图片保存成功: ${filePath}`);
 
           // 保存相对路径到数据库
-          const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/images/${fileName}`;
+          const relativePath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_team/images/${fileName}`;
           const imageResult = await dbOperations.teamImages.create(
             teamId,
             file.name,
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
         
         // 保存Excel文件到documents文件夹
         const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
-        const excelTeamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_团队组`);
+        const excelTeamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
         const documentsDir = path.join(excelTeamDir, 'documents');
         await mkdir(documentsDir, { recursive: true });
         
@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
         console.log(`📊 Excel信息保存成功: ${excelFilePath}`);
         
         // 将Excel文件也保存到数据库
-        const relativeExcelPath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_团队组/documents/${excelFileName}`;
+        const relativeExcelPath = `uploads/team_data/${safeTeamName}_${safeContactEmail}_team/documents/${excelFileName}`;
         await dbOperations.teamDocuments.create(
           teamId,
           'teamInfo',
