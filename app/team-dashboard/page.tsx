@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface TeamSubmission {
   id: number;
@@ -16,6 +17,7 @@ interface TeamSubmission {
 }
 
 export default function TeamDashboard() {
+  const router = useRouter();
   const [teamInfo, setTeamInfo] = useState<any>(null);
   const [submissions, setSubmissions] = useState<TeamSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,13 +151,11 @@ export default function TeamDashboard() {
     router.push('/team-register-new?update=true');
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const handleUpdateDocument = (submission: TeamSubmission) => {
+    // 跳转到文档更新页面
+    router.push(`/team-edit-document/${submission.id}`);
   };
+
 
   if (loading) {
     return (
@@ -231,12 +231,6 @@ export default function TeamDashboard() {
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium text-gray-900">作品提交记录</h2>
-              <a 
-                href="/team-submit" 
-                className="btn-primary"
-              >
-                提交新作品
-              </a>
             </div>
 
             {submissions.length === 0 ? (
@@ -244,12 +238,6 @@ export default function TeamDashboard() {
                 <div className="text-gray-400 text-6xl mb-4">📁</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">暂无提交记录</h3>
                 <p className="text-gray-500">您还没有提交任何作品。</p>
-                <a 
-                  href="/team-submit" 
-                  className="mt-4 inline-block btn-primary"
-                >
-                  立即提交作品
-                </a>
               </div>
             ) : (
               <div className="space-y-6">
@@ -270,7 +258,6 @@ export default function TeamDashboard() {
                           <div>
                             <p><span className="font-medium">文件名:</span> {submission.original_name}</p>
                             <p><span className="font-medium">文件类型:</span> {submission.mime_type}</p>
-                            <p><span className="font-medium">文件大小:</span> {formatFileSize(submission.file_size)}</p>
                           </div>
                           <div>
                             <p><span className="font-medium">提交时间:</span> {new Date(submission.created_at).toLocaleString()}</p>
@@ -293,15 +280,15 @@ export default function TeamDashboard() {
                       </button>
                       
                       <button
-                        onClick={() => handlePreviewDocument(submission)}
+                        onClick={() => handleUpdateDocument(submission)}
                         className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                       >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        预览文档
+                        更新文档
                       </button>
+                      
                       
                       <span className="text-xs text-gray-500">
                         最后更新: {new Date(submission.updated_at).toLocaleString()}

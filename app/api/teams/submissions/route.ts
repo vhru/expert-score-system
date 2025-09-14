@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       original_name: doc.document_name,
       document_type: doc.document_type,
       team_name: decoded.teamName,
-      file_size: doc.file_size,
+      file_size: doc.document_size || doc.file_size || 0,
       mime_type: doc.mime_type,
       upload_status: 'completed',
       created_at: doc.uploaded_at,
