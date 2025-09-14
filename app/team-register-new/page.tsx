@@ -73,6 +73,9 @@ export default function TeamRegisterPage() {
     supplementaryMaterials: null as File | null
   });
 
+  // 图片上传
+  const [images, setImages] = useState<(File | null)[]>([null, null, null, null, null]);
+
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBasicInfo(prev => ({ ...prev, [name]: value }));
@@ -95,6 +98,18 @@ export default function TeamRegisterPage() {
       return;
     }
     setDocuments(prev => ({ ...prev, [type]: file }));
+  };
+
+  const handleImageChange = (index: number, file: File | null) => {
+    if (file && file.size > 10 * 1024 * 1024) {
+      setError('图片文件大小不能超过10MB');
+      return;
+    }
+    setImages(prev => {
+      const newImages = [...prev];
+      newImages[index] = file;
+      return newImages;
+    });
   };
 
   const addCoreMember = () => {
@@ -171,6 +186,13 @@ export default function TeamRegisterPage() {
       coreMembers.forEach((member, index) => {
         if (member.cv) {
           formData.append(`memberCv_${index}`, member.cv);
+        }
+      });
+
+      // 图片上传
+      images.forEach((image, index) => {
+        if (image) {
+          formData.append(`image_${index}`, image);
         }
       });
 
@@ -788,6 +810,32 @@ export default function TeamRegisterPage() {
                     onChange={(e) => handleDocumentChange('supplementaryMaterials', e.target.files?.[0] || null)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* 图片上传 */}
+              <div className="space-y-4">
+                <h3 className="text-md font-medium text-gray-900">{t('teamRegister.images.title')}</h3>
+                <p className="text-sm text-gray-600">{t('teamRegister.images.description')}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {images.map((image, index) => (
+                    <div key={index}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('teamRegister.images.image')} {index + 1} {t('common.optional')}
+                      </label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.gif"
+                        onChange={(e) => handleImageChange(index, e.target.files?.[0] || null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      {image && (
+                        <p className="text-xs text-green-600 mt-1">
+                          {t('common.selected')}: {image.name}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

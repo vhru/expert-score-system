@@ -668,7 +668,7 @@ export const dbOperations = {
         });
       });
     },
-
+    
     findById: (id: number): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.get('SELECT * FROM team_documents WHERE id = ?', [id], (err, row) => {

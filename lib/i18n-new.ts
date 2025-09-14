@@ -242,6 +242,11 @@ export interface Translations {
       presentation: string;
       supplementaryMaterials: string;
     };
+    images: {
+      title: string;
+      description: string;
+      image: string;
+    };
     password: {
       title: string;
       password: string;
@@ -537,6 +542,11 @@ const zhTranslations: Translations = {
       presentation: '演示文稿',
       supplementaryMaterials: '其他补充材料',
     },
+    images: {
+      title: '团队图片',
+      description: '可上传最多5张团队相关图片（PNG/JPG/GIF格式，每张不超过10MB）',
+      image: '图片',
+    },
     password: {
       title: '5. 登录密码',
       password: '密码',
@@ -825,6 +835,11 @@ const enTranslations: Translations = {
       technicalInfoEnglish: 'Technical Feasibility Analysis (English Version)',
       presentation: 'Presentation',
       supplementaryMaterials: 'Supplementary Materials',
+    },
+    images: {
+      title: 'Team Images',
+      description: 'Upload up to 5 team-related images (PNG/JPG/GIF format, max 10MB each)',
+      image: 'Image',
     },
     password: {
       title: '5. Login Password',
