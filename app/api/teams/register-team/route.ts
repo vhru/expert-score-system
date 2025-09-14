@@ -138,9 +138,11 @@ export async function POST(request: NextRequest) {
       ];
 
       const documentResults = [];
+      console.log('📁 开始处理文档上传...');
       for (const docType of documentTypes) {
         const file = formData.get(docType) as File;
         if (file) {
+          console.log(`📄 处理文档: ${docType}, 文件名: ${file.name}, 大小: ${file.size}`);
           try {
             const uploadDir = path.join(process.env.UPLOAD_DIR || './uploads', 'team-documents');
             await mkdir(uploadDir, { recursive: true });
@@ -151,6 +153,8 @@ export async function POST(request: NextRequest) {
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
 
+            console.log(`💾 文件保存成功: ${filePath}`);
+
             const docResult = await dbOperations.teamDocuments.create(
               teamId,
               docType,
@@ -159,12 +163,16 @@ export async function POST(request: NextRequest) {
               file.name,
               file.type
             );
+            console.log(`🗄️ 数据库记录创建成功:`, docResult);
             documentResults.push(docResult);
           } catch (error) {
-            console.error(`Failed to save document ${docType}:`, error);
+            console.error(`❌ 保存文档失败 ${docType}:`, error);
           }
+        } else {
+          console.log(`⚠️ 未找到文档: ${docType}`);
         }
       }
+      console.log(`✅ 文档处理完成，共处理 ${documentResults.length} 个文档`);
 
       return NextResponse.json({
         success: true,

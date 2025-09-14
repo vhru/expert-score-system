@@ -252,6 +252,20 @@ const mysqlOperations = {
         [status, score || null, comments || null, id]
       );
       return result;
+    },
+    
+    async getStatistics() {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute(`
+        SELECT 
+          COUNT(*) as total_assignments,
+          SUM(CASE WHEN assignment_status = 'assigned' THEN 1 ELSE 0 END) as pending_reviews,
+          SUM(CASE WHEN assignment_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_reviews,
+          SUM(CASE WHEN assignment_status = 'completed' THEN 1 ELSE 0 END) as completed_reviews,
+          AVG(CASE WHEN assignment_status = 'completed' THEN score ELSE NULL END) as average_score
+        FROM review_assignments
+      `);
+      return rows[0];
     }
   },
   
@@ -499,6 +513,14 @@ export const dbOperations = {
         return await mysqlOperations.assignments.updateStatus(id, status, score, comments);
       } else {
         return sqliteOperations.assignments.updateStatus(id, status, score, comments);
+      }
+    },
+    
+    async getStatistics() {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.getStatistics();
+      } else {
+        return sqliteOperations.assignments.getStatistics();
       }
     }
   },

@@ -254,14 +254,21 @@ export default function EnterpriseRegisterPage() {
         return;
       }
 
-      const result = await response.json();
-      console.log('Registration result:', result);
+      let result;
+      try {
+        result = await response.json();
+        console.log('Registration result:', result);
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
+        setError('响应解析失败，请重试');
+        return;
+      }
 
-      if (result.success) {
+      if (result && result.success) {
         alert(t('enterpriseRegister.success'));
         router.push('/team-login');
       } else {
-        setError(result.error || '注册失败');
+        setError(result?.error || '注册失败');
       }
     } catch (err) {
       setError('注册过程中发生错误');
