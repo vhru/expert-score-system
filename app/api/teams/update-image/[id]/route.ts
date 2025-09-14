@@ -33,6 +33,11 @@ export async function PUT(
     if (!originalImage) {
       return NextResponse.json({ error: '图片不存在' }, { status: 404 });
     }
+    
+    console.log('🔄 图片更新调试信息:');
+    console.log('   图片ID:', params.id);
+    console.log('   原始路径:', originalImage.image_path);
+    console.log('   团队ID:', originalImage.team_id);
 
     // 验证图片是否属于当前团队
     if (originalImage.team_id !== decoded.id) {
@@ -57,11 +62,14 @@ export async function PUT(
       return NextResponse.json({ error: '图片大小不能超过5MB' }, { status: 400 });
     }
 
-    // 构建文件路径 - 保持原有路径结构
+    // 构建文件路径 - 修复路径嵌套问题
     let filePath;
-    if (originalImage.image_path.startsWith('uploads/')) {
-      // 相对路径，直接拼接
-      filePath = path.join(process.cwd(), originalImage.image_path);
+    if (originalImage.image_path.startsWith('uploads/team_data/')) {
+      // 数据库中的相对路径，需要转换为绝对路径
+      // 从 uploads/team_data/项目名_邮箱_team/images/文件名 转换为 /opt/team_data/team_data/项目名_邮箱_team/images/文件名
+      const relativePath = originalImage.image_path.replace('uploads/team_data/', '');
+      filePath = path.join('/opt/team_data/team_data', relativePath);
+      console.log('🔄 路径转换:', originalImage.image_path, '->', filePath);
     } else if (path.isAbsolute(originalImage.image_path)) {
       // 绝对路径，直接使用
       filePath = originalImage.image_path;
@@ -78,6 +86,8 @@ export async function PUT(
     const bytes = await newImage.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
+    
+    console.log('💾 图片更新保存成功:', filePath);
 
     // 更新数据库记录 - 保持原有路径，只更新文件大小和名称
     const updatedImage = await dbOperations.teamImages.update(

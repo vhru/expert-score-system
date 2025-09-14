@@ -58,11 +58,14 @@ export async function POST(
       return NextResponse.json({ error: '文件大小不能超过10MB' }, { status: 400 });
     }
 
-    // 构建文件路径 - 保持原有路径结构
+    // 构建文件路径 - 修复路径嵌套问题
     let filePath;
-    if (originalDocument.document_path.startsWith('uploads/')) {
-      // 相对路径，直接拼接
-      filePath = path.join(process.cwd(), originalDocument.document_path);
+    if (originalDocument.document_path.startsWith('uploads/team_data/')) {
+      // 数据库中的相对路径，需要转换为绝对路径
+      // 从 uploads/team_data/项目名_邮箱_team/documents/文件名 转换为 /opt/team_data/team_data/项目名_邮箱_team/documents/文件名
+      const relativePath = originalDocument.document_path.replace('uploads/team_data/', '');
+      filePath = path.join('/opt/team_data/team_data', relativePath);
+      console.log('🔄 文档路径转换:', originalDocument.document_path, '->', filePath);
     } else if (path.isAbsolute(originalDocument.document_path)) {
       // 绝对路径，直接使用
       filePath = originalDocument.document_path;
