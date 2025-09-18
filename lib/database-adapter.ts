@@ -650,7 +650,7 @@ export const dbOperations = {
       if (useMySQL()) {
         return await mysqlOperations.teamImages.create(teamId, imageName, imagePath, imageSize);
       } else {
-        return sqliteOperations.teamImages.create(teamId, imageName, imagePath, imageSize);
+        return sqliteOperations.teamImages.create(teamId, imageName, imagePath, imageSize, 'image/jpeg');
       }
     },
     

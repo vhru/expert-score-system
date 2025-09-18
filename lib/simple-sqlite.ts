@@ -552,6 +552,19 @@ export const dbOperations = {
       });
     },
     
+    updateStatus: (id: number, status: string, score?: number, comments?: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(`
+          UPDATE review_assignments 
+          SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ?
+        `, [status, score || null, comments || null, id], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
+    },
+    
     getStatistics: (): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.get(`
@@ -565,6 +578,19 @@ export const dbOperations = {
         `, (err, row) => {
           if (err) reject(err);
           else resolve(row);
+        });
+      });
+    },
+    
+    updateStatus: (id: number, status: string, score?: number, comments?: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(`
+          UPDATE review_assignments 
+          SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ?
+        `, [status, score || null, comments || null, id], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
         });
       });
     },
@@ -612,6 +638,19 @@ export const dbOperations = {
       });
     },
     
+    update: (id: number, imagePath: string, imageSize: number, imageName?: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE team_images SET image_path = ?, image_size = ?, image_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [imagePath, imageSize, imageName || '', id],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ changes: this.changes });
+          }
+        );
+      });
+    },
+    
     delete: (id: number): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run('DELETE FROM team_images WHERE id = ?', [id], function(err) {
@@ -624,11 +663,11 @@ export const dbOperations = {
 
   // 核心成员操作
   coreMembers: {
-    create: (teamId: number, memberOrder: number, name: string, nationality: string, gender: string, birthDate: string, idType: string, idNumber: string, phone: string, email: string, university: string, highestDegree: string, organization: string, position: string): Promise<any> => {
+    create: (teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO core_members (team_id, member_order, name, nationality, gender, birth_date, id_type, id_number, phone, email, university, highest_degree, organization, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [teamId, memberOrder, name, nationality, gender, birthDate, idType, idNumber, phone, email, university, highestDegree, organization, position],
+          'INSERT INTO core_members (team_id, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [teamId, name, position, nationality, idType, idNumber, cvPath || null],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });
