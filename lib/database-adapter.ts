@@ -1029,8 +1029,8 @@ export async function initDatabase() {
     const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
     
     await pool.execute(`
-      INSERT IGNORE INTO users (username, password, role, expert_type) 
-      VALUES (?, ?, 'admin', 'admin')
+      INSERT IGNORE INTO users (username, password, role, encrypted_info, expert_type) 
+      VALUES (?, ?, 'admin', NULL, 'admin')
     `, [process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword]);
     
     console.log('MySQL database initialized successfully');

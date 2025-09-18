@@ -160,8 +160,8 @@ export async function initDatabase() {
         }
 
         db.run(`
-          INSERT OR IGNORE INTO users (username, password, role) 
-          VALUES (?, ?, 'admin')
+          INSERT OR IGNORE INTO users (username, password, role, expert_type) 
+          VALUES (?, ?, 'admin', 'admin')
         `, [process.env.ADMIN_EMAIL || 'admin@example.com', hash], (err: any) => {
           if (err) {
             console.error('Admin user creation error:', err);
