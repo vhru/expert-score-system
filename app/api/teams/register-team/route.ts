@@ -114,16 +114,19 @@ export async function POST(request: NextRequest) {
         const cvFile = formData.get(`memberCv_${i}`) as File;
         if (cvFile) {
           try {
-            const uploadDir = path.join('/opt/team_data/team_data', 'member-cvs');
-            await mkdir(uploadDir, { recursive: true });
+            // 使用团队目录下的member-cvs目录
+            const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+            const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
+            const memberCvsDir = path.join(teamDir, 'member-cvs');
+            await mkdir(memberCvsDir, { recursive: true });
             const fileExtension = path.extname(cvFile.name);
             const fileName = `${teamId}_member_${i + 1}_${Date.now()}${fileExtension}`;
-            const filePath = path.join(uploadDir, fileName);
+            const filePath = path.join(memberCvsDir, fileName);
             const bytes = await cvFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
             await writeFile(filePath, buffer);
 
-            // CV文件已保存，路径将在图片处理中记录
+            console.log(`💾 CV文件保存成功: ${filePath}`);
           } catch (error) {
             console.error(`Failed to save CV for member ${i + 1}:`, error);
           }

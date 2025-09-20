@@ -109,13 +109,18 @@ export async function PUT(
         // 删除旧文档
         await dbOperations.teamDocuments.deleteByTeamAndType(teamId, docType);
         
-        // 保存新文档 - 使用新的路径结构
-        const teamDir = path.join('/opt/team_data/team_data', `team_${teamId}`);
-        await mkdir(teamDir, { recursive: true });
+        // 保存新文档 - 使用团队目录结构
+        const teamInfo = await dbOperations.teams.findById(teamId);
+        const teamName = teamInfo?.team_name || `team_${teamId}`;
+        const safeTeamName = teamName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+        const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+        const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
+        const documentsDir = path.join(teamDir, 'documents');
+        await mkdir(documentsDir, { recursive: true });
         const fileExtension = path.extname(file.name);
         const emailPrefix = contactInfo.contactPersonEmail.split('@')[0];
         const fileName = `${teamId}_${emailPrefix}_${docType}_${Date.now()}${fileExtension}`;
-        const filePath = path.join(teamDir, fileName);
+        const filePath = path.join(documentsDir, fileName);
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         await writeFile(filePath, buffer);

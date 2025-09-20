@@ -3,16 +3,12 @@ export const PATHS_CONFIG = {
   // 基础路径
   UPLOAD_BASE_DIR: process.env.UPLOAD_DIR || '/opt/team_data',
   
-  // 团队数据路径
-  TEAM_DATA_DIR: 'team_data',
-  
-  // 子目录
+  // 实际使用的子目录
   SUBDIRS: {
-    DOCUMENTS: 'documents',
-    IMAGES: 'images',
-    PHOTOS: 'photos',
-    MEMBER_CVS: 'member-cvs',
-    TEAM_IMAGES: 'team-images'
+    TEAM_DATA: 'team_data',        // 团队数据根目录
+    DOCUMENTS: 'documents',        // 团队文档目录
+    IMAGES: 'images',              // 团队图片目录
+    MEMBER_CVS: 'member-cvs'       // 成员CV目录
   },
   
   // 文件类型映射
@@ -36,19 +32,22 @@ export class PathBuilder {
     return `${safeTeamName}_${safeContactEmail}_${teamType}`;
   }
   
-  static getTeamDataPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
+  // 团队文档路径：/opt/team_data/team_data/{团队目录}/documents/
+  static getTeamDocumentsPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
     const teamDir = this.getTeamDir(teamName, contactEmail, teamType);
-    return `${PATHS_CONFIG.UPLOAD_BASE_DIR}/${PATHS_CONFIG.TEAM_DATA_DIR}/${teamDir}`;
+    return `${PATHS_CONFIG.UPLOAD_BASE_DIR}/${PATHS_CONFIG.SUBDIRS.TEAM_DATA}/${teamDir}/${PATHS_CONFIG.SUBDIRS.DOCUMENTS}`;
   }
   
-  static getDocumentsPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
-    const teamDataPath = this.getTeamDataPath(teamName, contactEmail, teamType);
-    return `${teamDataPath}/${PATHS_CONFIG.SUBDIRS.DOCUMENTS}`;
+  // 团队图片路径：/opt/team_data/team_data/{团队目录}/images/
+  static getTeamImagesPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
+    const teamDir = this.getTeamDir(teamName, contactEmail, teamType);
+    return `${PATHS_CONFIG.UPLOAD_BASE_DIR}/${PATHS_CONFIG.SUBDIRS.TEAM_DATA}/${teamDir}/${PATHS_CONFIG.SUBDIRS.IMAGES}`;
   }
   
-  static getImagesPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
-    const teamDataPath = this.getTeamDataPath(teamName, contactEmail, teamType);
-    return `${teamDataPath}/${PATHS_CONFIG.SUBDIRS.IMAGES}`;
+  // 成员CV路径：/opt/team_data/team_data/{团队目录}/member-cvs/
+  static getMemberCvsPath(teamName: string, contactEmail: string, teamType: 'team' | 'enterprise'): string {
+    const teamDir = this.getTeamDir(teamName, contactEmail, teamType);
+    return `${PATHS_CONFIG.UPLOAD_BASE_DIR}/${PATHS_CONFIG.SUBDIRS.TEAM_DATA}/${teamDir}/${PATHS_CONFIG.SUBDIRS.MEMBER_CVS}`;
   }
   
   static getRelativePath(absolutePath: string): string {

@@ -19,6 +19,10 @@
    docker-compose up -d
    ```
 
+3. **访问维护页面**：
+   - 用户访问任何页面都会自动重定向到 `/maintenance`
+   - 维护页面会显示维护信息和预计结束时间
+
 ### 关闭维护模式
 
 1. **修改环境变量**：
@@ -38,12 +42,13 @@
 ### 被禁用的功能
 - 团队注册 (`/api/teams/register-team`)
 - 企业注册 (`/api/teams/register-enterprise`)
+- 所有用户页面（自动重定向到维护页面）
 
 ### 仍然可用的功能
-- 管理员登录
-- 专家登录
-- 数据查看
-- 系统管理
+- 管理员登录 (`/admin-dashboard`)
+- 管理员审核 (`/admin-audit`)
+- 系统状态检查 (`/api/system/status`)
+- 维护页面 (`/maintenance`)
 
 ## 🔍 检查维护状态
 

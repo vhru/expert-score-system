@@ -91,8 +91,9 @@ export async function POST(request: NextRequest) {
         const imageFile = formData.get(`image_${i}`) as File;
         if (imageFile) {
           try {
-            // 创建上传目录
-            const uploadDir = path.join('/opt/team_data/team_data', 'team-images');
+            // 创建上传目录 - 使用团队目录下的images目录
+            const teamDir = path.join('/opt/team_data/team_data', `team_${teamId}`);
+            const uploadDir = path.join(teamDir, 'images');
             await mkdir(uploadDir, { recursive: true });
             
             // 生成唯一文件名
