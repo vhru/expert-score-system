@@ -1,224 +1,109 @@
-const http = require('http');
+// 测试修复效果
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 
-console.log('🧪 测试修复后的功能...');
+async function testFixes() {
+  console.log('=== 测试修复效果 ===');
+  
+  const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'expert_review',
+  };
 
-// 测试专家登录和评审功能
-function testExpertLogin() {
-  return new Promise((resolve, reject) => {
-    const postData = JSON.stringify({
-      username: 'expert1',
-      password: 'password123'
-    });
-
-    const options = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/api/auth/login',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
-
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          if (result.success) {
-            console.log('✅ 专家登录成功');
-            resolve(result.token);
-          } else {
-            reject(new Error('专家登录失败'));
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.write(postData);
-    req.end();
-  });
-}
-
-// 测试获取专家评审任务
-function testGetExpertAssignments(token) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/api/expert/assignments',
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    };
-
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          if (result.success) {
-            console.log('✅ 获取专家评审任务成功');
-            console.log(`任务数量: ${result.assignments.length}`);
-            result.assignments.forEach(assignment => {
-              console.log(`  - ${assignment.team_name || assignment.original_name} (${assignment.assignment_status})`);
-              if (assignment.score !== null) {
-                console.log(`    已评分: ${assignment.score}分`);
-              }
-            });
-            resolve(result.assignments);
-          } else {
-            reject(new Error(result.error));
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.end();
-  });
-}
-
-// 测试管理员获取团队列表
-function testGetTeamsWithStatus() {
-  return new Promise((resolve, reject) => {
-    // 先获取管理员token
-    const loginData = JSON.stringify({
-      username: 'admin@example.com',
-      password: 'admin123'
-    });
-
-    const loginOptions = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/api/auth/login',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(loginData)
-      }
-    };
-
-    const loginReq = http.request(loginOptions, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          if (result.success) {
-            // 获取团队列表
-            const teamOptions = {
-              hostname: 'localhost',
-              port: 3000,
-              path: '/api/admin/teams',
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${result.token}`
-              }
-            };
-
-            const teamReq = http.request(teamOptions, (teamRes) => {
-              let teamData = '';
-              teamRes.on('data', (chunk) => {
-                teamData += chunk;
-              });
-              
-              teamRes.on('end', () => {
-                try {
-                  const teamResult = JSON.parse(teamData);
-                  if (teamResult.success) {
-                    console.log('✅ 获取团队列表成功');
-                    teamResult.teams.forEach(team => {
-                      console.log(`  - ${team.team_name || team.original_name}`);
-                      if (team.reviewStatus) {
-                        console.log(`    评审状态: ${team.reviewStatus.completedAssignments}/${team.reviewStatus.totalAssignments} 完成`);
-                        if (team.reviewStatus.averageScore) {
-                          console.log(`    平均分: ${team.reviewStatus.averageScore}分`);
-                        }
-                      }
-                    });
-                    resolve(teamResult.teams);
-                  } else {
-                    reject(new Error(teamResult.error));
-                  }
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            });
-
-            teamReq.on('error', (err) => {
-              reject(err);
-            });
-
-            teamReq.end();
-          } else {
-            reject(new Error('管理员登录失败'));
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-
-    loginReq.on('error', (err) => {
-      reject(err);
-    });
-
-    loginReq.write(loginData);
-    loginReq.end();
-  });
-}
-
-// 运行测试
-async function runTests() {
   try {
-    console.log('1. 测试专家登录和评审功能...');
-    const expertToken = await testExpertLogin();
-    await testGetExpertAssignments(expertToken);
+    const connection = await mysql.createConnection(dbConfig);
+    console.log('✅ 数据库连接成功');
+
+    // 1. 测试管理员登录
+    console.log('\n1. 测试管理员登录:');
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     
-    console.log('\n2. 测试管理员团队管理功能...');
-    await testGetTeamsWithStatus();
+    const [adminUsers] = await connection.execute(
+      'SELECT * FROM users WHERE username = ? AND role = "admin"',
+      [adminEmail]
+    );
     
-    console.log('\n🎉 所有修复测试通过！');
-    console.log('\n📋 修复内容总结:');
-    console.log('✅ 1. 团队登录页面添加了返回系统首页的链接');
-    console.log('✅ 2. 专家评审界面支持修改已完成的评审');
-    console.log('✅ 3. 管理员团队管理显示评审状态和平均分');
-    
-    console.log('\n🌐 现在可以访问的界面:');
-    console.log('- 系统门户: http://localhost:3000/portal');
-    console.log('- 团队登录: http://localhost:3000/team-login (有返回链接)');
-    console.log('- 专家登录: http://localhost:3000/expert-login');
-    console.log('- 管理员登录: http://localhost:3000/admin-login');
+    if (adminUsers.length > 0) {
+      const user = adminUsers[0];
+      const isValidPassword = await bcrypt.compare(adminPassword, user.password);
+      console.log(`管理员用户存在: ${user.username}`);
+      console.log(`密码验证: ${isValidPassword ? '✅ 正确' : '❌ 错误'}`);
+    } else {
+      console.log('❌ 管理员用户不存在');
+    }
+
+    // 2. 测试数据库表结构
+    console.log('\n2. 测试数据库表结构:');
+    const tables = ['users', 'teams', 'files', 'review_assignments', 'team_documents'];
+    for (const table of tables) {
+      try {
+        const [columns] = await connection.execute(`DESCRIBE ${table}`);
+        console.log(`✅ ${table} 表存在，字段数: ${columns.length}`);
+      } catch (error) {
+        console.log(`❌ ${table} 表不存在或有问题: ${error.message}`);
+      }
+    }
+
+    // 3. 测试files表的findByTeam方法
+    console.log('\n3. 测试files表查询:');
+    try {
+      const [files] = await connection.execute('SELECT * FROM files LIMIT 5');
+      console.log(`✅ files表查询成功，记录数: ${files.length}`);
+      if (files.length > 0) {
+        console.log('示例记录:', files[0]);
+      }
+    } catch (error) {
+      console.log(`❌ files表查询失败: ${error.message}`);
+    }
+
+    // 4. 测试团队和文件关联
+    console.log('\n4. 测试团队和文件关联:');
+    try {
+      const [teams] = await connection.execute('SELECT team_name FROM teams LIMIT 3');
+      for (const team of teams) {
+        const [teamFiles] = await connection.execute(
+          'SELECT * FROM files WHERE team_name = ?',
+          [team.team_name]
+        );
+        console.log(`团队 "${team.team_name}" 的文件数: ${teamFiles.length}`);
+      }
+    } catch (error) {
+      console.log(`❌ 团队文件关联测试失败: ${error.message}`);
+    }
+
+    // 5. 测试评审分配
+    console.log('\n5. 测试评审分配:');
+    try {
+      const [assignments] = await connection.execute(`
+        SELECT ra.*, f.team_name, u.username as expert_name
+        FROM review_assignments ra
+        JOIN files f ON ra.file_id = f.id
+        JOIN users u ON ra.expert_id = u.id
+        LIMIT 5
+      `);
+      console.log(`✅ 评审分配查询成功，记录数: ${assignments.length}`);
+      if (assignments.length > 0) {
+        console.log('示例分配记录:', assignments[0]);
+      }
+    } catch (error) {
+      console.log(`❌ 评审分配查询失败: ${error.message}`);
+    }
+
+    await connection.end();
+    console.log('\n✅ 测试完成');
 
   } catch (error) {
-    console.log('\n❌ 测试失败:', error.message);
+    console.error('❌ 测试失败:', error.message);
   }
 }
 
-runTests();
+// 如果直接运行此脚本
+if (require.main === module) {
+  testFixes();
+}
+
+module.exports = { testFixes };

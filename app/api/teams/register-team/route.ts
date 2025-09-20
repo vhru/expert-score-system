@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbOperations } from '@/lib/database-adapter';
 import { encryptData } from '@/lib/encryption';
+import { isMaintenanceMode, getMaintenanceMessage } from '@/lib/maintenance';
 import bcrypt from 'bcryptjs';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
+    // 检查维护模式
+    if (isMaintenanceMode()) {
+      return NextResponse.json({
+        error: '系统维护中',
+        message: getMaintenanceMessage()
+      }, { status: 503 });
+    }
+
     const formData = await request.formData();
     
     // 解析基本信息
