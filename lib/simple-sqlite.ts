@@ -451,6 +451,24 @@ export const dbOperations = {
           }
         );
       });
+    },
+    
+    findByTeam: (teamName: string): Promise<any[]> => {
+      return new Promise((resolve, reject) => {
+        db.all('SELECT * FROM files WHERE team_name = ?', [teamName], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+    },
+    
+    delete: (id: number): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM files WHERE id = ?', [id], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
     }
   },
   

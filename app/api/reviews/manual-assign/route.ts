@@ -55,24 +55,38 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // 获取该团队的所有文件
+    const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+    if (teamFiles.length === 0) {
+      return NextResponse.json({ error: '该团队没有上传任何文档' }, { status: 400 });
+    }
+
     // 检查是否已经分配过
     const existingAssignments = await Promise.all(
-      expertIds.map(id => dbOperations.assignments.findByExpertAndFile(id, teamId))
+      expertIds.map(expertId => 
+        Promise.all(teamFiles.map(file => 
+          dbOperations.assignments.findByExpertAndFile(expertId, file.id)
+        ))
+      )
     );
     
-    const alreadyAssigned = expertIds.filter((id, index) => existingAssignments[index]);
+    const alreadyAssigned = expertIds.filter((expertId, expertIndex) => 
+      existingAssignments[expertIndex].some(assignment => assignment)
+    );
     if (alreadyAssigned.length > 0) {
       return NextResponse.json({ error: `专家ID ${alreadyAssigned.join(', ')} 已经分配过此团队` }, { status: 400 });
     }
 
-    // 创建分配记录
+    // 创建分配记录 - 为每个文件分配专家
     const results = [];
     for (const expertId of expertIds) {
-      try {
-        const result = await dbOperations.assignments.create(teamId, expertId);
-        results.push(result);
-      } catch (error) {
-        console.error(`Failed to assign team ${teamId} to expert ${expertId}:`, error);
+      for (const file of teamFiles) {
+        try {
+          const result = await dbOperations.assignments.create(file.id, expertId);
+          results.push(result);
+        } catch (error) {
+          console.error(`Failed to assign file ${file.id} to expert ${expertId}:`, error);
+        }
       }
     }
 

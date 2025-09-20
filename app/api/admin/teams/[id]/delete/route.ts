@@ -86,11 +86,24 @@ export async function DELETE(
       console.log(`✅ 删除核心成员记录: ${coreMembers.length} 个`);
 
       // 删除评审分配记录
-      const assignments = await dbOperations.assignments.findByFile(teamId);
-      for (const assignment of assignments) {
-        await dbOperations.assignments.delete(assignment.id);
+      // 首先找到该团队的所有文件
+      const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+      let totalAssignments = 0;
+      
+      for (const file of teamFiles) {
+        const assignments = await dbOperations.assignments.findByFile(file.id);
+        for (const assignment of assignments) {
+          await dbOperations.assignments.delete(assignment.id);
+          totalAssignments++;
+        }
       }
-      console.log(`✅ 删除评审分配记录: ${assignments.length} 个`);
+      console.log(`✅ 删除评审分配记录: ${totalAssignments} 个`);
+      
+      // 删除团队文件记录
+      for (const file of teamFiles) {
+        await dbOperations.files.delete(file.id);
+      }
+      console.log(`✅ 删除团队文件记录: ${teamFiles.length} 个`);
 
     } catch (error) {
       console.error('删除关联数据失败:', error);

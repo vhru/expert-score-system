@@ -166,6 +166,19 @@ export async function POST(request: NextRequest) {
               file.name,
               file.type
             );
+            console.log(`🗄️ 团队文档记录创建成功:`, docResult);
+            
+            // 同时创建files记录用于评审分配
+            const fileResult = await dbOperations.files.create(
+              file.name,
+              relativePath,
+              file.size,
+              file.type,
+              null, // encryptedInfo
+              teamName // teamName
+            );
+            console.log(`🗄️ 文件记录创建成功:`, fileResult);
+            
             documentResults.push(docResult);
           } catch (error) {
             console.error(`Failed to save document ${docType}:`, error);

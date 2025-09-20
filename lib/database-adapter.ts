@@ -230,6 +230,18 @@ const mysqlOperations = {
         [status, id]
       );
       return result;
+    },
+    
+    async findByTeam(teamName: string) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute('SELECT * FROM files WHERE team_name = ?', [teamName]);
+      return rows;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM files WHERE id = ?', [id]);
+      return result;
     }
   },
   
@@ -583,6 +595,22 @@ export const dbOperations = {
         return await mysqlOperations.files.updateStatus(id, status);
       } else {
         return sqliteOperations.files.updateStatus(id, status);
+      }
+    },
+    
+    async findByTeam(teamName: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.files.findByTeam(teamName);
+      } else {
+        return sqliteOperations.files.findByTeam(teamName);
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.files.delete(id);
+      } else {
+        return sqliteOperations.files.delete(id);
       }
     }
   },

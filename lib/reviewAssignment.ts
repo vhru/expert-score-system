@@ -33,9 +33,18 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
 
     // 为每个团队分配至少2个专家（根据团队类型匹配专家类型）
     for (const team of teams) {
+      // 获取该团队的所有文件
+      const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+      if (teamFiles.length === 0) {
+        console.warn(`团队 ${team.team_name} 没有上传任何文档，跳过分配`);
+        continue;
+      }
+
       // 检查是否已经分配过
       const allAssignments = await dbOperations.assignments.findAll();
-      const existingAssignments = allAssignments.filter(a => a.file_id === team.id);
+      const existingAssignments = allAssignments.filter(a => 
+        teamFiles.some(file => file.id === a.file_id)
+      );
 
       if (existingAssignments.length > 0) {
         continue; // 跳过已分配的团队
@@ -54,9 +63,11 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
       const shuffledExperts = matchingExperts.sort(() => 0.5 - Math.random());
       const selectedExperts = shuffledExperts.slice(0, Math.min(2, matchingExperts.length));
 
-      // 创建分配记录
+      // 创建分配记录 - 为每个文件分配专家
       for (const expert of selectedExperts) {
-        await dbOperations.assignments.create(team.id, expert.id);
+        for (const file of teamFiles) {
+          await dbOperations.assignments.create(file.id, expert.id);
+        }
 
         assignments.push({
           team_id: team.id,
@@ -65,7 +76,8 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
           expert_name: expert.username,
           expert_type: expert.expert_type,
           team_type: teamType,
-          status: 'assigned'
+          status: 'assigned',
+          files_count: teamFiles.length
         });
       }
     }
