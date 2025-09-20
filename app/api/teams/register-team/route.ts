@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         if (cvFile) {
           try {
             // 使用团队目录下的member-cvs目录
+            const safeTeamName = basicInfo.projectName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
             const safeContactEmail = contactInfo.contactPersonEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
             const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_team`);
             const memberCvsDir = path.join(teamDir, 'member-cvs');

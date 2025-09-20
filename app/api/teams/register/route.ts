@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { encryptData } from '@/lib/encryption';
+import { isMaintenanceMode, getMaintenanceMessage } from '@/lib/maintenance';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
+    // 检查维护模式
+    if (isMaintenanceMode()) {
+      return NextResponse.json({
+        error: '系统维护中',
+        message: getMaintenanceMessage()
+      }, { status: 503 });
+    }
+
     const formData = await request.formData();
     const teamInfoStr = formData.get('teamInfo') as string;
     
@@ -91,8 +100,11 @@ export async function POST(request: NextRequest) {
         const imageFile = formData.get(`image_${i}`) as File;
         if (imageFile) {
           try {
-            // 创建上传目录 - 使用团队目录下的images目录
-            const teamDir = path.join('/opt/team_data/team_data', `team_${teamId}`);
+            // 创建上传目录 - 使用正确的团队目录格式
+            const safeTeamName = sanitizedData.teamName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+            const safeContactEmail = sanitizedData.contactEmail.replace(/[^a-zA-Z0-9@.-]/g, '_');
+            const teamType = sanitizedData.isEnterprise ? 'enterprise' : 'team';
+            const teamDir = path.join('/opt/team_data/team_data', `${safeTeamName}_${safeContactEmail}_${teamType}`);
             const uploadDir = path.join(teamDir, 'images');
             await mkdir(uploadDir, { recursive: true });
             
@@ -111,12 +123,7 @@ export async function POST(request: NextRequest) {
               teamId,
               imageFile.name,
               filePath,
-              imageFile.size,
-              imageFile.type,
-              encryptData(JSON.stringify({
-                originalName: imageFile.name,
-                uploadedAt: new Date().toISOString()
-              }))
+              imageFile.size
             );
             
             imageResults.push(imageResult);
