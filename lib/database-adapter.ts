@@ -197,6 +197,12 @@ const mysqlOperations = {
         [...values, id]
       );
       return result;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM teams WHERE id = ?', [id]);
+      return result;
     }
   },
   
@@ -375,6 +381,12 @@ const mysqlOperations = {
         'UPDATE team_images SET image_path = ?, image_size = ?, image_name = ? WHERE id = ?',
         [imagePath, imageSize, imageName || '', id]
       );
+      return result;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM team_images WHERE id = ?', [id]);
       return result;
     }
   },
@@ -599,6 +611,14 @@ export const dbOperations = {
       } else {
         return sqliteOperations.teams.update(id, data);
       }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teams.delete(id);
+      } else {
+        return sqliteOperations.teams.delete(id);
+      }
     }
   },
   
@@ -756,6 +776,14 @@ export const dbOperations = {
         return await mysqlOperations.teamImages.update(id, imagePath, imageSize, imageName);
       } else {
         return sqliteOperations.teamImages.update(id, imagePath, imageSize, imageName);
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamImages.delete(id);
+      } else {
+        return sqliteOperations.teamImages.delete(id);
       }
     }
   },
