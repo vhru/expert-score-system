@@ -292,6 +292,12 @@ const mysqlOperations = {
       return result;
     },
     
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM review_assignments WHERE id = ?', [id]);
+      return result;
+    },
+    
     async getStatistics() {
       const pool = getMysqlPool();
       const [rows] = await pool.execute(`
@@ -338,11 +344,6 @@ const mysqlOperations = {
       return rows;
     },
     
-    async delete(id: number) {
-      const pool = getMysqlPool();
-      const [result] = await pool.execute('DELETE FROM review_assignments WHERE id = ?', [id]);
-      return result;
-    }
   },
   
   // 团队图片操作
@@ -393,6 +394,12 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const [rows] = await pool.execute('SELECT * FROM core_members WHERE team_id = ?', [teamId]);
       return rows;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM core_members WHERE id = ?', [id]);
+      return result;
     },
     
     async deleteByTeam(teamId: number) {
@@ -767,6 +774,14 @@ export const dbOperations = {
         return await mysqlOperations.coreMembers.findByTeam(teamId);
       } else {
         return sqliteOperations.coreMembers.findByTeam(teamId);
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.coreMembers.delete(id);
+      } else {
+        return sqliteOperations.coreMembers.delete(id);
       }
     },
     
