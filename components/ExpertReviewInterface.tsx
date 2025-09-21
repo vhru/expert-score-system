@@ -150,15 +150,21 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
       const responses = await Promise.all(promises);
       const results = await Promise.all(responses.map(r => r.json()));
 
-      const allSuccess = results.every(r => r.success);
+      const successCount = results.filter(r => r.success).length;
+      const totalCount = results.length;
       
-      if (allSuccess) {
+      if (successCount === totalCount) {
         setMessage('团队评审提交成功！');
         setMessageType('success');
         setSelectedTeam(null);
         fetchAssignments(); // 刷新任务列表
+      } else if (successCount > 0) {
+        setMessage(`评审提交部分成功：${successCount}/${totalCount} 个任务已提交`);
+        setMessageType('success');
+        setSelectedTeam(null);
+        fetchAssignments(); // 刷新任务列表
       } else {
-        setMessage('部分评审提交失败，请重试');
+        setMessage('评审提交失败，请重试');
         setMessageType('error');
       }
     } catch (error) {
@@ -181,6 +187,8 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
           'Authorization': `Bearer ${token}`,
         },
       });
+      
+      console.log('🔍 获取团队信息:', team.status, team.statusText);
       
       if (!team.ok) {
         setMessage('获取团队信息失败');

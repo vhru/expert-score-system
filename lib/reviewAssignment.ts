@@ -68,8 +68,12 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
         for (const file of teamFiles) {
           // 检查是否已经存在分配
           const existingAssignments = await dbOperations.assignments.findByExpertAndFile(expert.id, file.id);
+          console.log(`🔍 检查分配: 专家${expert.id} 文件${file.id} 现有分配:`, existingAssignments.length);
           if (existingAssignments.length === 0) {
             await dbOperations.assignments.create(file.id, expert.id);
+            console.log(`✅ 创建新分配: 专家${expert.id} 文件${file.id}`);
+          } else {
+            console.log(`⚠️ 跳过重复分配: 专家${expert.id} 文件${file.id}`);
           }
         }
 
@@ -134,6 +138,7 @@ export async function getReviewStatistics(): Promise<any> {
   try {
     const stats = await dbOperations.assignments.getStatistics();
     const teams = await dbOperations.teams.findAll();
+    const files = await dbOperations.files.findAll();
     
     const teamStats = {
       total_teams: teams.length,
@@ -142,12 +147,22 @@ export async function getReviewStatistics(): Promise<any> {
       active_teams: teams.filter(t => t.status === 'active').length
     };
 
+    const fileStats = {
+      total_files: files.length,
+      completed_files: files.filter(f => f.upload_status === 'completed').length
+    };
+
     return {
-      assignments: stats,
-      teams: teamStats
+      assignments: stats || {},
+      teams: teamStats,
+      files: fileStats
     };
   } catch (error) {
     console.error('Failed to get review statistics:', error);
-    return null;
+    return {
+      assignments: {},
+      teams: {},
+      files: {}
+    };
   }
 }
