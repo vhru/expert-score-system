@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import fs from 'fs/promises';
 import path from 'path';
+import { dbOperations } from '@/lib/database-adapter';
 
 export async function DELETE(
   request: NextRequest,
@@ -31,7 +32,7 @@ export async function DELETE(
       return NextResponse.json({ error: '无效的团队ID' }, { status: 400 });
     }
 
-    const { dbOperations } = await import('@/lib/database-adapter');
+    // dbOperations 已通过静态导入
 
     // 获取团队信息
     const team = await dbOperations.teams.findById(teamId);
