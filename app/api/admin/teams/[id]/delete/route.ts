@@ -105,18 +105,16 @@ export async function DELETE(
       }
       console.log(`✅ 删除团队文件记录: ${teamFiles.length} 个`);
 
-    } catch (error) {
-      console.error('删除关联数据失败:', error);
-      return NextResponse.json({ error: '删除关联数据失败' }, { status: 500 });
-    }
-
-    // 3. 删除团队主记录
-    try {
+      // 3. 删除团队主记录（在同一个事务中）
       await dbOperations.teams.delete(teamId);
       console.log(`✅ 团队主记录删除成功: ${team.team_name}`);
+
     } catch (error) {
-      console.error('删除团队主记录失败:', error);
-      return NextResponse.json({ error: '删除团队失败' }, { status: 500 });
+      console.error('删除团队数据失败:', error);
+      return NextResponse.json({ 
+        error: '删除团队失败', 
+        details: error.message 
+      }, { status: 500 });
     }
 
     return NextResponse.json({
