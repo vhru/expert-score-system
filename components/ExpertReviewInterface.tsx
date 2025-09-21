@@ -24,10 +24,20 @@ interface Assignment {
   team_name: string;
 }
 
+interface TeamAssignment {
+  team_name: string;
+  team_id: number;
+  assignments: Assignment[];
+  overall_score: number | null;
+  overall_comments: string | null;
+  status: string;
+}
+
 export default function ExpertReviewInterface({ user, token, onLogout }: ExpertReviewInterfaceProps) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<TeamAssignment | null>(null);
   const [reviewForm, setReviewForm] = useState({
     score: '',
     comments: ''
@@ -46,6 +56,37 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
       const data = await response.json();
       if (data.success) {
         setAssignments(data.assignments);
+        
+        // 按团队分组
+        const teamMap = new Map<string, TeamAssignment>();
+        
+        data.assignments.forEach((assignment: Assignment) => {
+          const teamName = assignment.team_name;
+          if (!teamMap.has(teamName)) {
+            teamMap.set(teamName, {
+              team_name: teamName,
+              team_id: assignment.id, // 使用第一个assignment的id作为team_id
+              assignments: [],
+              overall_score: null,
+              overall_comments: null,
+              status: 'assigned'
+            });
+          }
+          
+          const teamAssignment = teamMap.get(teamName)!;
+          teamAssignment.assignments.push(assignment);
+          
+          // 更新团队状态
+          if (assignment.assignment_status === 'completed') {
+            teamAssignment.status = 'completed';
+            teamAssignment.overall_score = assignment.score;
+            teamAssignment.overall_comments = assignment.comments;
+          } else if (assignment.assignment_status === 'in_progress') {
+            teamAssignment.status = 'in_progress';
+          }
+        });
+        
+        setTeamAssignments(Array.from(teamMap.values()));
       }
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
@@ -58,11 +99,11 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
     fetchAssignments();
   }, []);
 
-  const handleStartReview = (assignment: Assignment) => {
-    setSelectedAssignment(assignment);
+  const handleStartReview = (teamAssignment: TeamAssignment) => {
+    setSelectedTeam(teamAssignment);
     setReviewForm({
-      score: assignment.score ? assignment.score.toString() : '',
-      comments: assignment.comments || ''
+      score: teamAssignment.overall_score ? teamAssignment.overall_score.toString() : '',
+      comments: teamAssignment.overall_comments || ''
     });
     setMessage('');
   };
@@ -70,7 +111,7 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedAssignment) return;
+    if (!selectedTeam) return;
     
     const score = parseFloat(reviewForm.score);
     if (isNaN(score) || score < 0 || score > 100) {
@@ -89,28 +130,34 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
     setMessage('');
 
     try {
-      const response = await fetch('/api/expert/submit-review', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          assignmentId: selectedAssignment.id,
-          score: score,
-          comments: reviewForm.comments.trim()
-        }),
-      });
+      // 为团队的所有文件提交评审
+      const promises = selectedTeam.assignments.map(assignment => 
+        fetch('/api/expert/submit-review', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            assignmentId: assignment.id,
+            score: score,
+            comments: reviewForm.comments.trim()
+          }),
+        })
+      );
 
-      const data = await response.json();
+      const responses = await Promise.all(promises);
+      const results = await Promise.all(responses.map(r => r.json()));
 
-      if (data.success) {
-        setMessage('评审提交成功！');
+      const allSuccess = results.every(r => r.success);
+      
+      if (allSuccess) {
+        setMessage('团队评审提交成功！');
         setMessageType('success');
-        setSelectedAssignment(null);
+        setSelectedTeam(null);
         fetchAssignments(); // 刷新任务列表
       } else {
-        setMessage(data.error || '提交失败');
+        setMessage('部分评审提交失败，请重试');
         setMessageType('error');
       }
     } catch (error) {
@@ -121,9 +168,31 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
     }
   };
 
-  const handleDownloadFile = async (assignment: Assignment) => {
+  const handleDownloadZip = async (teamAssignment: TeamAssignment) => {
     try {
-      const response = await fetch(`/api/expert/download/${assignment.file_id}`, {
+      // 获取团队ID
+      const team = await fetch(`/api/admin/teams/by-name/${encodeURIComponent(teamAssignment.team_name)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!team.ok) {
+        setMessage('获取团队信息失败');
+        setMessageType('error');
+        return;
+      }
+      
+      const teamData = await team.json();
+      const teamId = teamData.team?.id;
+      
+      if (!teamId) {
+        setMessage('团队ID不存在');
+        setMessageType('error');
+        return;
+      }
+      
+      const response = await fetch(`/api/admin/teams/${teamId}/download-zip`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -134,15 +203,18 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = assignment.original_name;
+        a.download = `${teamAssignment.team_name}_团队资料.zip`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else {
+        setMessage('ZIP下载失败');
+        setMessageType('error');
       }
     } catch (error) {
-      console.error('Failed to download file:', error);
-      setMessage('文件下载失败');
+      console.error('Failed to download ZIP:', error);
+      setMessage('ZIP下载失败');
       setMessageType('error');
     }
   };
@@ -204,7 +276,7 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
           </button>
         </div>
 
-        {assignments.length === 0 ? (
+        {teamAssignments.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">📝</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">暂无评审任务</h3>
@@ -212,39 +284,39 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
           </div>
         ) : (
           <div className="space-y-4">
-            {assignments.map((assignment) => (
-              <div key={assignment.id} className="border border-gray-200 rounded-lg p-4">
+            {teamAssignments.map((teamAssignment) => (
+              <div key={teamAssignment.team_name} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {assignment.team_name || assignment.original_name}
+                        {teamAssignment.team_name}
                       </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(assignment.assignment_status)}`}>
-                        {getStatusText(assignment.assignment_status)}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(teamAssignment.status)}`}>
+                        {getStatusText(teamAssignment.status)}
                       </span>
                     </div>
                     <div className="text-sm text-gray-500 space-y-1">
-                      <p>文件类型: {assignment.mime_type}</p>
-                      <p>分配时间: {new Date(assignment.created_at).toLocaleString()}</p>
-                      {assignment.score !== null && (
-                        <p>已评分: {assignment.score}分</p>
+                      <p>文件数量: {teamAssignment.assignments.length} 个</p>
+                      <p>分配时间: {new Date(teamAssignment.assignments[0]?.created_at).toLocaleString()}</p>
+                      {teamAssignment.overall_score !== null && (
+                        <p>已评分: {teamAssignment.overall_score}分</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => handleDownloadFile(assignment)}
+                      onClick={() => handleDownloadZip(teamAssignment)}
                       className="btn-secondary text-sm"
                     >
-                      下载文件
+                      📦 下载ZIP
                     </button>
                     <button
-                      onClick={() => handleStartReview(assignment)}
+                      onClick={() => handleStartReview(teamAssignment)}
                       className="btn-primary text-sm"
                     >
-                      {assignment.assignment_status === 'completed' ? '修改评审' : 
-                       assignment.assignment_status === 'assigned' ? '开始评审' : '继续评审'}
+                      {teamAssignment.status === 'completed' ? '修改评审' : 
+                       teamAssignment.status === 'assigned' ? '开始评审' : '继续评审'}
                     </button>
                   </div>
                 </div>
@@ -255,16 +327,16 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
       </div>
 
       {/* 评审表单模态框 */}
-      {selectedAssignment && (
+      {selectedTeam && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  评审作品 - {selectedAssignment.team_name || selectedAssignment.original_name}
+                  评审团队 - {selectedTeam.team_name}
                 </h3>
                 <button
-                  onClick={() => setSelectedAssignment(null)}
+                  onClick={() => setSelectedTeam(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <span className="sr-only">关闭</span>
@@ -317,7 +389,7 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setSelectedAssignment(null)}
+                    onClick={() => setSelectedTeam(null)}
                     className="btn-secondary"
                   >
                     取消

@@ -798,6 +798,15 @@ export const dbOperations = {
         );
       });
     },
+    
+    deleteByTeam: (teamId: number): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        db.run('DELETE FROM team_documents WHERE team_id = ?', [teamId], function(err) {
+          if (err) reject(err);
+          else resolve({ changes: this.changes });
+        });
+      });
+    }
   }
 };
 

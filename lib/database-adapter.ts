@@ -320,6 +320,15 @@ const mysqlOperations = {
       return rows;
     },
     
+    async findByExpertAndFile(expertId: number, fileId: number) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute(
+        'SELECT * FROM review_assignments WHERE expert_id = ? AND file_id = ?',
+        [expertId, fileId]
+      );
+      return rows;
+    },
+    
     async delete(id: number) {
       const pool = getMysqlPool();
       const [result] = await pool.execute('DELETE FROM review_assignments WHERE id = ?', [id]);
@@ -419,6 +428,18 @@ const mysqlOperations = {
         'UPDATE team_documents SET document_path = ?, document_size = ?, document_name = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream', id]
       );
+      return result;
+    },
+    
+    async delete(id: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM team_documents WHERE id = ?', [id]);
+      return result;
+    },
+    
+    async deleteByTeam(teamId: number) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute('DELETE FROM team_documents WHERE team_id = ?', [teamId]);
       return result;
     }
   }
@@ -664,6 +685,14 @@ export const dbOperations = {
       }
     },
     
+    async findByExpertAndFile(expertId: number, fileId: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.findByExpertAndFile(expertId, fileId);
+      } else {
+        return sqliteOperations.assignments.findByExpertAndFile(expertId, fileId);
+      }
+    },
+    
     async delete(id: number) {
       if (useMySQL()) {
         return await mysqlOperations.assignments.delete(id);
@@ -771,6 +800,22 @@ export const dbOperations = {
         return await mysqlOperations.teamDocuments.update(id, documentPath, documentSize, documentName, mimeType);
       } else {
         return sqliteOperations.teamDocuments.update(id, documentPath, documentSize, documentName, mimeType);
+      }
+    },
+    
+    async delete(id: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamDocuments.delete(id);
+      } else {
+        return sqliteOperations.teamDocuments.delete(id);
+      }
+    },
+    
+    async deleteByTeam(teamId: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.teamDocuments.deleteByTeam(teamId);
+      } else {
+        return sqliteOperations.teamDocuments.deleteByTeam(teamId);
       }
     }
   },

@@ -66,7 +66,11 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
       // 创建分配记录 - 为每个文件分配专家
       for (const expert of selectedExperts) {
         for (const file of teamFiles) {
-          await dbOperations.assignments.create(file.id, expert.id);
+          // 检查是否已经存在分配
+          const existingAssignments = await dbOperations.assignments.findByExpertAndFile(expert.id, file.id);
+          if (existingAssignments.length === 0) {
+            await dbOperations.assignments.create(file.id, expert.id);
+          }
         }
 
         assignments.push({
