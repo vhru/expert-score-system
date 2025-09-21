@@ -200,8 +200,11 @@ const mysqlOperations = {
     },
     
     async delete(id: number) {
+      console.log(`🗑️ MySQL teams.delete 被调用，ID: ${id}`);
       const pool = getMysqlPool();
+      console.log(`🔍 MySQL连接池状态:`, pool ? '已连接' : '未连接');
       const [result] = await pool.execute('DELETE FROM teams WHERE id = ?', [id]);
+      console.log(`✅ MySQL删除团队结果:`, result);
       return result;
     }
   },
@@ -614,9 +617,16 @@ export const dbOperations = {
     },
     
     async delete(id: number) {
+      console.log(`🔍 dbOperations.teams.delete 被调用，ID: ${id}`);
+      console.log(`🔍 useMySQL():`, useMySQL());
+      console.log(`🔍 mysqlOperations.teams.delete 类型:`, typeof mysqlOperations.teams.delete);
+      console.log(`🔍 sqliteOperations.teams.delete 类型:`, typeof sqliteOperations.teams.delete);
+      
       if (useMySQL()) {
+        console.log(`🗑️ 使用MySQL删除团队 ID: ${id}`);
         return await mysqlOperations.teams.delete(id);
       } else {
+        console.log(`🗑️ 使用SQLite删除团队 ID: ${id}`);
         return sqliteOperations.teams.delete(id);
       }
     }
