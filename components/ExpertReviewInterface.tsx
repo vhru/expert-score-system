@@ -43,6 +43,7 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
     comments: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
@@ -169,6 +170,10 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
   };
 
   const handleDownloadZip = async (teamAssignment: TeamAssignment) => {
+    setDownloading(teamAssignment.team_name);
+    setMessage('');
+    setMessageType('');
+    
     try {
       // 获取团队ID
       const team = await fetch(`/api/admin/teams/by-name/${encodeURIComponent(teamAssignment.team_name)}`, {
@@ -208,6 +213,8 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        setMessage('ZIP下载完成！');
+        setMessageType('success');
       } else {
         setMessage('ZIP下载失败');
         setMessageType('error');
@@ -216,6 +223,8 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
       console.error('Failed to download ZIP:', error);
       setMessage('ZIP下载失败');
       setMessageType('error');
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -307,9 +316,10 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleDownloadZip(teamAssignment)}
-                      className="btn-secondary text-sm"
+                      disabled={downloading === teamAssignment.team_name}
+                      className="btn-secondary text-sm disabled:opacity-50"
                     >
-                      📦 下载ZIP
+                      {downloading === teamAssignment.team_name ? '⏳ 准备中...' : '📦 下载ZIP'}
                     </button>
                     <button
                       onClick={() => handleStartReview(teamAssignment)}

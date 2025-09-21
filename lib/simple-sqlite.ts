@@ -517,16 +517,16 @@ export const dbOperations = {
       });
     },
     
-    findByExpertAndFile: (expertId: number, fileId: number): Promise<any> => {
+    findByExpertAndFile: (expertId: number, fileId: number): Promise<any[]> => {
       return new Promise((resolve, reject) => {
-        db.get(`
+        db.all(`
           SELECT ra.*, f.original_name, f.file_path, f.mime_type, f.team_name
           FROM review_assignments ra
           JOIN files f ON ra.file_id = f.id
           WHERE ra.expert_id = ? AND ra.file_id = ?
-        `, [expertId, fileId], (err, row) => {
+        `, [expertId, fileId], (err, rows) => {
           if (err) reject(err);
-          else resolve(row);
+          else resolve(rows);
         });
       });
     },

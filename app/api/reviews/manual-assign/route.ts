@@ -74,7 +74,11 @@ export async function POST(request: NextRequest) {
       existingAssignments[expertIndex].some(assignment => assignment)
     );
     if (alreadyAssigned.length > 0) {
-      return NextResponse.json({ error: `专家ID ${alreadyAssigned.join(', ')} 已经分配过此团队` }, { status: 400 });
+      const alreadyAssignedNames = alreadyAssigned.map(id => {
+        const expert = experts.find(e => e.id === id);
+        return expert ? expert.username : `ID ${id}`;
+      });
+      return NextResponse.json({ error: `专家 ${alreadyAssignedNames.join(', ')} 已经分配过此团队` }, { status: 400 });
     }
 
     // 创建分配记录 - 为每个文件分配专家

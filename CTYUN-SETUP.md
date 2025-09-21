@@ -187,3 +187,4 @@ docker-compose logs -f app
 3. 服务状态: `docker-compose ps`
 4. 错误日志: `docker-compose logs`
 
+

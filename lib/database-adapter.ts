@@ -259,7 +259,7 @@ const mysqlOperations = {
     async findByExpert(expertId: number) {
       const pool = getMysqlPool();
       const [rows] = await pool.execute(
-        'SELECT ra.*, f.original_name, f.file_path FROM review_assignments ra JOIN files f ON ra.file_id = f.id WHERE ra.expert_id = ?',
+        'SELECT ra.*, f.original_name, f.file_path, f.team_name, f.mime_type FROM review_assignments ra JOIN files f ON ra.file_id = f.id WHERE ra.expert_id = ?',
         [expertId]
       );
       return rows;
@@ -277,8 +277,17 @@ const mysqlOperations = {
     async updateStatus(id: number, status: string, score?: number, comments?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'UPDATE review_assignments SET status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE review_assignments SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [status, score || null, comments || null, id]
+      );
+      return result;
+    },
+    
+    async updateScore(id: number, score: number, comments: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute(
+        'UPDATE review_assignments SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ['completed', score, comments, id]
       );
       return result;
     },
@@ -666,6 +675,14 @@ export const dbOperations = {
         return await mysqlOperations.assignments.updateStatus(id, status, score, comments);
       } else {
         return sqliteOperations.assignments.updateStatus(id, status, score, comments);
+      }
+    },
+    
+    async updateScore(id: number, score: number, comments: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.updateScore(id, score, comments);
+      } else {
+        return sqliteOperations.assignments.updateScore(id, score, comments);
       }
     },
     
