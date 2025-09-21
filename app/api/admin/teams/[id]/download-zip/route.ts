@@ -20,7 +20,7 @@ export async function GET(
     const token = authHeader.substring(7);
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
 
-    if (!decoded || decoded.role !== 'admin') {
+    if (!decoded || (decoded.role !== 'admin' && decoded.role !== 'expert')) {
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 

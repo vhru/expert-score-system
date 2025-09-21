@@ -176,43 +176,62 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
   };
 
   const handleDownloadZip = async (teamAssignment: TeamAssignment) => {
+    console.log('🔍 开始ZIP下载流程:', teamAssignment.team_name);
     setDownloading(teamAssignment.team_name);
     setMessage('');
     setMessageType('');
     
     try {
       // 获取团队ID
+      console.log('🔍 步骤1: 获取团队信息...');
       const team = await fetch(`/api/admin/teams/by-name/${encodeURIComponent(teamAssignment.team_name)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       
-      console.log('🔍 获取团队信息:', team.status, team.statusText);
+      console.log('🔍 获取团队信息响应:', team.status, team.statusText);
       
       if (!team.ok) {
+        const errorText = await team.text();
+        console.error('❌ 获取团队信息失败:', errorText);
         setMessage('获取团队信息失败');
         setMessageType('error');
         return;
       }
       
       const teamData = await team.json();
+      console.log('🔍 团队数据:', teamData);
       const teamId = teamData.team?.id;
       
       if (!teamId) {
+        console.error('❌ 团队ID不存在:', teamData);
         setMessage('团队ID不存在');
         setMessageType('error');
         return;
       }
       
+      console.log('🔍 步骤2: 开始下载ZIP文件...', teamId);
       const response = await fetch(`/api/admin/teams/${teamId}/download-zip`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       
+      console.log('🔍 ZIP下载响应:', response.status, response.statusText);
+      
       if (response.ok) {
+        console.log('🔍 步骤3: 处理ZIP文件...');
         const blob = await response.blob();
+        console.log('🔍 ZIP文件大小:', blob.size, 'bytes');
+        
+        if (blob.size === 0) {
+          console.error('❌ ZIP文件为空');
+          setMessage('ZIP文件为空，可能没有文档');
+          setMessageType('error');
+          return;
+        }
+        
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -221,14 +240,17 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        console.log('✅ ZIP下载完成');
         setMessage('ZIP下载完成！');
         setMessageType('success');
       } else {
-        setMessage('ZIP下载失败');
+        const errorText = await response.text();
+        console.error('❌ ZIP下载失败:', response.status, errorText);
+        setMessage(`ZIP下载失败: ${response.status}`);
         setMessageType('error');
       }
     } catch (error) {
-      console.error('Failed to download ZIP:', error);
+      console.error('❌ ZIP下载异常:', error);
       setMessage('ZIP下载失败');
       setMessageType('error');
     } finally {
