@@ -188,3 +188,6 @@ docker-compose logs -f app
 4. 错误日志: `docker-compose logs`
 
 
+
+
+

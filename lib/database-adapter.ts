@@ -429,7 +429,7 @@ const mysqlOperations = {
     async create(teamId: number, documentType: string, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'INSERT INTO team_documents (team_id, document_type, document_path, document_size, document_name, mime_type) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO team_documents (team_id, document_type, document_path, file_size, document_name, mime_type) VALUES (?, ?, ?, ?, ?, ?)',
         [teamId, documentType, documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream']
       );
       return result;
@@ -456,7 +456,7 @@ const mysqlOperations = {
     async update(id: number, documentPath: string, documentSize: number, documentName?: string, mimeType?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
-        'UPDATE team_documents SET document_path = ?, document_size = ?, document_name = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE team_documents SET document_path = ?, file_size = ?, document_name = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [documentPath, documentSize, documentName || '', mimeType || 'application/octet-stream', id]
       );
       return result;
