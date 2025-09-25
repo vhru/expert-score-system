@@ -46,6 +46,11 @@ export interface Translations {
       title: string;
       description: string;
       enterpriseRegister: string;
+      login: string;
+    };
+    teamGroupSection: {
+      title: string;
+      description: string;
       teamRegister: string;
       login: string;
     };
