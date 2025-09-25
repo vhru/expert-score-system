@@ -350,7 +350,6 @@ const zhTranslations: Translations = {
       title: '企业专区',
       description: '注册企业账号，提交参赛作品，查看评审进度',
       enterpriseRegister: '企业组注册',
-      teamRegister: '团队组注册',
       login: '企业组登录',
     },
     teamGroupSection: {
@@ -650,7 +649,6 @@ const enTranslations: Translations = {
       title: 'Enterprise Zone',
       description: 'Register enterprise account, submit works, view review progress',
       enterpriseRegister: 'Enterprise Registration',
-      teamRegister: 'Team Registration',
       login: 'Enterprise Login',
     },
     teamGroupSection: {
