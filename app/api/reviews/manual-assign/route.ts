@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取该团队的所有文件
-    const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+    const teamFiles = await dbOperations.files.findByTeam(team.team_name) as any[];
     if (teamFiles.length === 0) {
       return NextResponse.json({ error: '该团队没有上传任何文档' }, { status: 400 });
     }
