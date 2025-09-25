@@ -14,11 +14,11 @@ export interface ReviewAssignment {
 export async function assignReviewsToExperts(): Promise<{ success: boolean; message: string; assignments: any[] }> {
   try {
     // 获取所有团队
-    const allTeams = await dbOperations.teams.findAll();
+    const allTeams = await dbOperations.teams.findAll() as any[];
     const teams = allTeams.filter(t => t.status === 'active' && t.audit_status === 'approved');
 
     // 获取所有专家
-    const allUsers = await dbOperations.users.findAll();
+    const allUsers = await dbOperations.users.findAll() as any[];
     const experts = allUsers.filter(u => u.role === 'expert');
 
     if (teams.length === 0) {
@@ -34,14 +34,14 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
     // 为每个团队分配至少2个专家（根据团队类型匹配专家类型）
     for (const team of teams) {
       // 获取该团队的所有文件
-      const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+      const teamFiles = await dbOperations.files.findByTeam(team.team_name) as any[];
       if (teamFiles.length === 0) {
         console.warn(`团队 ${team.team_name} 没有上传任何文档，跳过分配`);
         continue;
       }
 
       // 检查是否已经分配过
-      const allAssignments = await dbOperations.assignments.findAll();
+      const allAssignments = await dbOperations.assignments.findAll() as any[];
       const existingAssignments = allAssignments.filter(a => 
         teamFiles.some(file => file.id === a.file_id)
       );
@@ -63,30 +63,31 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
       const shuffledExperts = matchingExperts.sort(() => 0.5 - Math.random());
       const selectedExperts = shuffledExperts.slice(0, Math.min(2, matchingExperts.length));
 
-      // 创建分配记录 - 为每个文件分配专家
-      for (const expert of selectedExperts) {
-        for (const file of teamFiles) {
+      // 创建分配记录 - 为每个文件分配2个专家
+      for (const file of teamFiles) {
+        for (const expert of selectedExperts) {
           // 检查是否已经存在分配
-          const existingAssignments = await dbOperations.assignments.findByExpertAndFile(expert.id, file.id);
+          const existingAssignments = await dbOperations.assignments.findByExpertAndFile(expert.id, file.id) as any[];
           console.log(`🔍 检查分配: 专家${expert.id} 文件${file.id} 现有分配:`, existingAssignments.length);
           if (existingAssignments.length === 0) {
             await dbOperations.assignments.create(file.id, expert.id);
             console.log(`✅ 创建新分配: 专家${expert.id} 文件${file.id}`);
+            
+            assignments.push({
+              team_id: team.id,
+              team_name: team.team_name,
+              expert_id: expert.id,
+              expert_name: expert.username,
+              expert_type: expert.expert_type,
+              team_type: teamType,
+              status: 'assigned',
+              file_id: file.id,
+              file_name: file.original_name
+            });
           } else {
             console.log(`⚠️ 跳过重复分配: 专家${expert.id} 文件${file.id}`);
           }
         }
-
-        assignments.push({
-          team_id: team.id,
-          team_name: team.team_name,
-          expert_id: expert.id,
-          expert_name: expert.username,
-          expert_type: expert.expert_type,
-          team_type: teamType,
-          status: 'assigned',
-          files_count: teamFiles.length
-        });
       }
     }
 
@@ -104,7 +105,7 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
 
 export async function getExpertAssignments(expertId: number): Promise<ReviewAssignment[]> {
   try {
-    return await dbOperations.assignments.findByExpert(expertId);
+    return await dbOperations.assignments.findByExpert(expertId) as any[];
   } catch (error) {
     console.error('Failed to get expert assignments:', error);
     return [];
@@ -127,7 +128,7 @@ export async function submitReview(
 
 export async function getAllAssignments(): Promise<any[]> {
   try {
-    return await dbOperations.assignments.findAll();
+    return await dbOperations.assignments.findAll() as any[];
   } catch (error) {
     console.error('Failed to get all assignments:', error);
     return [];
@@ -136,9 +137,9 @@ export async function getAllAssignments(): Promise<any[]> {
 
 export async function getReviewStatistics(): Promise<any> {
   try {
-    const stats = await dbOperations.assignments.getStatistics();
-    const teams = await dbOperations.teams.findAll();
-    const files = await dbOperations.files.findAll();
+    const stats = await dbOperations.assignments.getStatistics() as any;
+    const teams = await dbOperations.teams.findAll() as any[];
+    const files = await dbOperations.files.findAll() as any[];
     
     const teamStats = {
       total_teams: teams.length,

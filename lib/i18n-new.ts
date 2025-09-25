@@ -347,11 +347,17 @@ const zhTranslations: Translations = {
     title: '澜湄国家科技创新大赛',
     subtitle: '专业的作品评审平台，支持团队作品提交、专家盲审、管理员统一管理',
     teamSection: {
-      title: '团队专区',
-      description: '注册团队账号，提交参赛作品，查看评审进度',
+      title: '企业专区',
+      description: '注册企业账号，提交参赛作品，查看评审进度',
       enterpriseRegister: '企业组注册',
       teamRegister: '团队组注册',
-      login: '团队登录',
+      login: '企业组登录',
+    },
+    teamGroupSection: {
+      title: '团队专区',
+      description: '注册团队账号，提交参赛作品，查看评审进度',
+      teamRegister: '团队组注册',
+      login: '团队组登录',
     },
     expertSection: {
       title: '专家专区',
@@ -641,9 +647,15 @@ const enTranslations: Translations = {
     title: 'Lancang-Mekong Countries Science and Technology Innovation Competition',
     subtitle: 'Professional review platform supporting team submissions, expert blind review, and admin management',
     teamSection: {
+      title: 'Enterprise Zone',
+      description: 'Register enterprise account, submit works, view review progress',
+      enterpriseRegister: 'Enterprise Registration',
+      teamRegister: 'Team Registration',
+      login: 'Enterprise Login',
+    },
+    teamGroupSection: {
       title: 'Team Zone',
       description: 'Register team account, submit works, view review progress',
-      enterpriseRegister: 'Enterprise Registration',
       teamRegister: 'Team Registration',
       login: 'Team Login',
     },

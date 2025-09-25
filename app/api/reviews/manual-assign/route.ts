@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `专家 ${alreadyAssignedNames.join(', ')} 已经分配过此团队` }, { status: 400 });
     }
 
-    // 创建分配记录 - 为每个文件分配专家
+    // 创建分配记录 - 为每个文件分配所有选中的专家
     const results = [];
-    for (const expertId of expertIds) {
-      for (const file of teamFiles) {
+    for (const file of teamFiles) {
+      for (const expertId of expertIds) {
         try {
           const result = await dbOperations.assignments.create(file.id, expertId);
           results.push(result);

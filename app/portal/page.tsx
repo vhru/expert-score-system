@@ -66,22 +66,22 @@ export default function PortalPage() {
           {/* 团队组专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="text-5xl mb-4">👥</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamSection.title')} / Team</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamGroupSection.title')} / Team</h3>
             <p className="text-sm text-gray-600 mb-4">
-              {t('portal.teamSection.description')}
+              {t('portal.teamGroupSection.description')}
             </p>
             <div className="space-y-2">
               <a 
                 href="/team-register-new" 
                 className="block w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm"
               >
-{t('portal.teamSection.teamRegister')}
+{t('portal.teamGroupSection.teamRegister')}
               </a>
               <a 
                 href="/team-login" 
                 className="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm"
               >
-{t('portal.teamSection.login')}
+{t('portal.teamGroupSection.login')}
               </a>
             </div>
           </div>
