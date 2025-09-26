@@ -40,14 +40,16 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
         continue;
       }
 
-      // 检查是否已经分配过
+      // 检查是否已经分配过 - 如果该团队有任何文件被分配过，就跳过整个团队
       const allAssignments = await dbOperations.assignments.findAll() as any[];
+      const teamFileIds = teamFiles.map(f => f.id);
       const existingAssignments = allAssignments.filter(a => 
-        teamFiles.some(file => file.id === a.file_id)
+        teamFileIds.includes(a.file_id)
       );
 
       if (existingAssignments.length > 0) {
-        continue; // 跳过已分配的团队
+        console.log(`团队 ${team.team_name} 已经分配过专家，跳过`);
+        continue;
       }
 
       // 根据团队类型筛选专家
