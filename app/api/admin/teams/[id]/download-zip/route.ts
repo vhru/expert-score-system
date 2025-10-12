@@ -18,7 +18,12 @@ export async function GET(
     }
 
     const token = authHeader.substring(7);
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    console.log('ZIP: 收到的token长度:', token.length);
+    console.log('ZIP: token前50字符:', token.substring(0, 50));
+    console.log('ZIP: JWT_SECRET存在:', !!process.env.JWT_SECRET);
+    
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'expert_review_jwt_secret_2024_production');
+    console.log('ZIP: JWT验证成功, 用户角色:', decoded.role);
 
     if (!decoded || (decoded.role !== 'admin' && decoded.role !== 'expert')) {
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
@@ -102,23 +107,46 @@ export async function GET(
         const documentFiles = fs.readdirSync(documentsFolder);
         console.log('找到文档文件:', documentFiles);
         
+        // 按文件类型分组，确保每种类型只添加最新的文件
+        const filesByType = new Map();
+        
         for (const fileName of documentFiles) {
           const filePath = path.join(documentsFolder, fileName);
           if (fs.statSync(filePath).isFile()) {
-            // 生成友好的文件名
-            let friendlyName = fileName;
-            if (fileName.includes('commitmentLetter')) friendlyName = fileName.replace(/.*commitmentLetter.*/, '承诺书.pdf');
-            else if (fileName.includes('technicalInfoChinese')) friendlyName = fileName.replace(/.*technicalInfoChinese.*/, '技术信息_中文.pdf');
-            else if (fileName.includes('technicalInfoEnglish')) friendlyName = fileName.replace(/.*technicalInfoEnglish.*/, '技术信息_英文.pdf');
-            else if (fileName.includes('presentation')) friendlyName = fileName.replace(/.*presentation.*/, '项目展示.pdf');
-            else if (fileName.includes('supplementaryMaterials')) friendlyName = fileName.replace(/.*supplementaryMaterials.*/, '补充材料.pdf');
-            else if (fileName.includes('team_info')) friendlyName = fileName.replace(/.*team_info.*/, '团队信息.xlsx');
+            const stats = fs.statSync(filePath);
             
-            archive.file(filePath, { name: `documents/${friendlyName}` });
-            console.log('添加文档到ZIP:', fileName, '->', friendlyName);
+            // 确定文件类型
+            let fileType = 'other';
+            if (fileName.includes('commitmentLetter')) fileType = 'commitmentLetter';
+            else if (fileName.includes('technicalInfoChinese')) fileType = 'technicalInfoChinese';
+            else if (fileName.includes('technicalInfoEnglish')) fileType = 'technicalInfoEnglish';
+            else if (fileName.includes('presentation')) fileType = 'presentation';
+            else if (fileName.includes('supplementaryMaterials')) fileType = 'supplementaryMaterials';
+            else if (fileName.includes('team_info')) fileType = 'teamInfo';
+            
+            // 只保留每种类型的最新文件
+            if (!filesByType.has(fileType) || stats.mtime > filesByType.get(fileType).mtime) {
+              filesByType.set(fileType, { fileName, filePath, mtime: stats.mtime });
+            }
           }
         }
+        
+        // 添加每种类型的最新文件
+        for (const [fileType, fileInfo] of Array.from(filesByType.entries())) {
+          let friendlyName = fileInfo.fileName;
+          if (fileType === 'commitmentLetter') friendlyName = '承诺书.pdf';
+          else if (fileType === 'technicalInfoChinese') friendlyName = '技术信息_中文.pdf';
+          else if (fileType === 'technicalInfoEnglish') friendlyName = '技术信息_英文.pdf';
+          else if (fileType === 'presentation') friendlyName = '项目展示.pdf';
+          else if (fileType === 'supplementaryMaterials') friendlyName = '补充材料.pdf';
+          else if (fileType === 'teamInfo') friendlyName = '团队信息.xlsx';
+          
+          archive.file(fileInfo.filePath, { name: `documents/${friendlyName}` });
+          console.log('添加文档到ZIP:', fileInfo.fileName, '->', friendlyName, '(最新文件)');
+        }
       }
+
+      // Excel文件已经通过documents文件夹自动包含在ZIP中
       
       // 添加图片文件夹中的所有文件
       const imagesFolder = path.join(teamFolder, 'images');

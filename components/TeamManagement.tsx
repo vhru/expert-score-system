@@ -42,11 +42,26 @@ interface Team {
   coreMembers?: CoreMember[];
   documents?: TeamDocument[];
   teamInfo?: {
-    teamName: string;
-    contactPerson: string;
-    contactPhone: string;
-    contactEmail: string;
-    teamDescription: string;
+    basicInfo?: {
+      projectName?: string;
+      projectBrief?: string;
+      projectStage?: string;
+      projectStageOthers?: string;
+      coreMembersNationality?: string;
+      nationalityType?: string;
+      selectedCountries?: string[];
+      nationalityOthers?: string;
+    };
+    contactInfo?: {
+      contactPersonName?: string;
+      contactPersonPosition?: string;
+      contactPersonPhone?: string;
+      contactPersonEmail?: string;
+    };
+    enterpriseInfo?: {
+      enterpriseName?: string;
+      enterpriseOverview?: string;
+    };
   };
   reviewCompletionStatus?: string; // 评审完成状态
   reviewStatus?: {
@@ -119,7 +134,10 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
       const response = await fetch('/api/admin/teams', {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
+        cache: 'no-store', // 强制不缓存
       });
       const data = await response.json();
       if (data.success) {
@@ -543,6 +561,118 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                       <p className="font-medium">{new Date(selectedTeam.created_at).toLocaleString()}</p>
                     </div>
                   </div>
+                  {/* 项目简介和企业简介 */}
+                  {selectedTeam.teamInfo && (
+                    <div className="mt-4 space-y-4">
+                      {selectedTeam.teamInfo?.basicInfo?.projectBrief && (
+                        <div>
+                          <h5 className="font-medium text-gray-900 mb-2">项目简介</h5>
+                          <div className="bg-white p-3 rounded border text-sm text-gray-700 max-h-32 overflow-y-auto">
+                            {selectedTeam.teamInfo.basicInfo.projectBrief}
+                          </div>
+                        </div>
+                      )}
+                      {selectedTeam.teamInfo?.enterpriseInfo?.enterpriseOverview && (
+                        <div>
+                          <h5 className="font-medium text-gray-900 mb-2">企业简介</h5>
+                          <div className="bg-white p-3 rounded border text-sm text-gray-700 max-h-32 overflow-y-auto">
+                            {selectedTeam.teamInfo.enterpriseInfo.enterpriseOverview}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 联系人信息 */}
+                  {selectedTeam.teamInfo?.contactInfo && (
+                    <div className="mt-4">
+                      <h5 className="font-medium text-gray-900 mb-3">联系人信息</h5>
+                      <div className="bg-white p-3 rounded border">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">联系人姓名:</span>
+                            <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonName || '未填写'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">联系人职位:</span>
+                            <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonPosition || '未填写'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">联系人电话:</span>
+                            <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonPhone || '未填写'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">联系人邮箱:</span>
+                            <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonEmail || '未填写'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 核心成员信息 */}
+                  {selectedTeam.coreMembers && selectedTeam.coreMembers.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="font-medium text-gray-900 mb-3">核心成员信息</h5>
+                      <div className="space-y-3">
+                        {selectedTeam.coreMembers.map((member, index) => (
+                          <div key={member.id} className="bg-white p-3 rounded border">
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-500">姓名:</span>
+                                <p className="font-medium">{member.name}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">职位:</span>
+                                <p className="font-medium">{member.position || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">国籍:</span>
+                                <p className="font-medium">{member.nationality || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">性别:</span>
+                                <p className="font-medium">{member.gender || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">出生日期:</span>
+                                <p className="font-medium">{member.birth_date || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">证件类型:</span>
+                                <p className="font-medium">{member.id_type || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">证件号码:</span>
+                                <p className="font-medium">{member.id_number || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">电话:</span>
+                                <p className="font-medium">{member.phone || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">邮箱:</span>
+                                <p className="font-medium">{member.email || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">大学:</span>
+                                <p className="font-medium">{member.university || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">最高学历:</span>
+                                <p className="font-medium">{member.highest_degree || '未填写'}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">组织:</span>
+                                <p className="font-medium">{member.organization || '未填写'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-4 p-3 bg-blue-50 rounded-md">
                     <p className="text-sm text-blue-700">
                       <strong>提示:</strong> 详细的团队信息、成员资料、项目详情等已包含在下载的ZIP文件中。

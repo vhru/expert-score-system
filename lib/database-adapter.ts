@@ -192,10 +192,19 @@ const mysqlOperations = {
       const pool = getMysqlPool();
       const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
       const values = Object.values(data);
+      
+      console.log('🔍 MySQL teams.update 调试信息:');
+      console.log('   团队ID:', id);
+      console.log('   更新字段:', Object.keys(data));
+      console.log('   SQL:', `UPDATE teams SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
+      console.log('   参数:', [...values, id]);
+      
       const [result] = await pool.execute(
         `UPDATE teams SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [...values, id]
       );
+      
+      console.log('   MySQL更新结果:', result);
       return result;
     },
     
@@ -283,6 +292,15 @@ const mysqlOperations = {
       return rows;
     },
     
+    async findByExpertAndTeam(expertId: number, teamName: string) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute(
+        'SELECT ra.*, f.original_name, f.file_path, f.team_name, f.mime_type FROM review_assignments ra JOIN files f ON ra.file_id = f.id WHERE ra.expert_id = ? AND f.team_name = ?',
+        [expertId, teamName]
+      );
+      return rows;
+    },
+    
     async updateStatus(id: number, status: string, score?: number, comments?: string) {
       const pool = getMysqlPool();
       const [result] = await pool.execute(
@@ -298,7 +316,8 @@ const mysqlOperations = {
         'UPDATE review_assignments SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         ['completed', score, comments, id]
       );
-      return result;
+      // MySQL的result对象使用affectedRows而不是changes
+      return { changes: (result as any).affectedRows };
     },
     
     async delete(id: number) {
@@ -396,11 +415,26 @@ const mysqlOperations = {
   
   // 核心成员操作
   coreMembers: {
-    async create(teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string) {
+    async create(teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, memberOrder?: number, gender?: string, birthDate?: string, phone?: string, email?: string, university?: string, highestDegree?: string, organization?: string) {
       const pool = getMysqlPool();
+      const params = [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null, gender || null, birthDate || null, phone || null, email || null, university || null, highestDegree || null, organization || null];
+      
+      console.log('🔍 MySQL coreMembers.create 参数:', {
+        teamId,
+        name,
+        email,
+        phone,
+        university,
+        highestDegree,
+        organization,
+        gender,
+        birthDate,
+        memberOrder
+      });
+      
       const [result] = await pool.execute(
-        'INSERT INTO core_members (team_id, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [teamId, name, position, nationality, idType, idNumber, cvPath || null]
+        'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path, gender, birth_date, phone, email, university, highest_degree, organization) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        params
       );
       return result;
     },
@@ -707,6 +741,14 @@ export const dbOperations = {
       }
     },
     
+    async findByExpertAndTeam(expertId: number, teamName: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.assignments.findByExpertAndTeam(expertId, teamName);
+      } else {
+        return sqliteOperations.assignments.findByExpertAndTeam(expertId, teamName);
+      }
+    },
+    
     async updateStatus(id: number, status: string, score?: number, comments?: string) {
       if (useMySQL()) {
         return await mysqlOperations.assignments.updateStatus(id, status, score, comments);
@@ -799,11 +841,11 @@ export const dbOperations = {
   },
   
   coreMembers: {
-    async create(teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string) {
+    async create(teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, memberOrder?: number, gender?: string, birthDate?: string, phone?: string, email?: string, university?: string, highestDegree?: string, organization?: string) {
       if (useMySQL()) {
-        return await mysqlOperations.coreMembers.create(teamId, name, position, nationality, idType, idNumber, cvPath);
+        return await mysqlOperations.coreMembers.create(teamId, name, position, nationality, idType, idNumber, cvPath, memberOrder, gender, birthDate, phone, email, university, highestDegree, organization);
       } else {
-        return sqliteOperations.coreMembers.create(teamId, name, position, nationality, idType, idNumber, cvPath);
+        return sqliteOperations.coreMembers.create(teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath, gender, birthDate, phone, email, university, highestDegree, organization);
       }
     },
     
@@ -994,6 +1036,7 @@ export async function initDatabase() {
       }
     }
     
+    
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS files (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1076,9 +1119,9 @@ export async function initDatabase() {
         gender VARCHAR(10),
         birth_date VARCHAR(20),
         id_type VARCHAR(20),
-        id_number VARCHAR(50),
-        phone VARCHAR(20),
-        email VARCHAR(100),
+        id_number TEXT,
+        phone TEXT,
+        email TEXT,
         university VARCHAR(200),
         highest_degree VARCHAR(50),
         organization VARCHAR(200),
@@ -1094,12 +1137,28 @@ export async function initDatabase() {
       { name: 'member_order', type: 'INT NOT NULL DEFAULT 0' },
       { name: 'gender', type: 'VARCHAR(10)' },
       { name: 'birth_date', type: 'VARCHAR(20)' },
-      { name: 'phone', type: 'VARCHAR(20)' },
-      { name: 'email', type: 'VARCHAR(100)' },
+      { name: 'phone', type: 'TEXT' },
+      { name: 'email', type: 'TEXT' },
       { name: 'university', type: 'VARCHAR(200)' },
       { name: 'highest_degree', type: 'VARCHAR(50)' },
       { name: 'organization', type: 'VARCHAR(200)' }
     ];
+    
+    // 修改现有字段类型以支持加密数据
+    const fieldModifications = [
+      { name: 'id_number', type: 'TEXT' },
+      { name: 'phone', type: 'TEXT' },
+      { name: 'email', type: 'TEXT' }
+    ];
+    
+    for (const field of fieldModifications) {
+      try {
+        await pool.execute(`ALTER TABLE core_members MODIFY COLUMN ${field.name} ${field.type}`);
+        console.log(`✅ 修改字段 ${field.name} 为 ${field.type}`);
+      } catch (error) {
+        console.warn(`Warning: Could not modify ${field.name} column:`, error.message);
+      }
+    }
     
     for (const field of coreMemberFields) {
       try {

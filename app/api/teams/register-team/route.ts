@@ -78,6 +78,24 @@ export async function POST(request: NextRequest) {
     // 加密密码
     const hashedPassword = await bcrypt.hash(basicInfo.password, 10);
 
+    // 根据国籍类型决定保存的国别信息
+    let countriesToSave;
+    if (basicInfo.nationalityType === 'single') {
+      // 单一国别：使用 coreMembersNationality 字段
+      countriesToSave = basicInfo.coreMembersNationality ? [basicInfo.coreMembersNationality] : [];
+    } else {
+      // 多国别：使用 selectedCountries 数组
+      countriesToSave = basicInfo.selectedCountries;
+    }
+    
+    // 调试日志：查看实际保存的数据
+    console.log('🔍 团队注册调试信息:');
+    console.log('   basicInfo.nationalityType:', basicInfo.nationalityType);
+    console.log('   basicInfo.coreMembersNationality:', basicInfo.coreMembersNationality);
+    console.log('   basicInfo.selectedCountries:', basicInfo.selectedCountries);
+    console.log('   countriesToSave:', countriesToSave);
+    console.log('   coreMembers学历信息:', coreMembers.map(m => ({ name: m.name, highestDegree: m.highestDegree })));
+
     // 创建团队记录
     const result = await dbOperations.teams.create(
       basicInfo.projectName, // 使用项目名称作为团队名称
@@ -90,7 +108,7 @@ export async function POST(request: NextRequest) {
       basicInfo.projectStage, // 项目阶段
       basicInfo.projectStageOthers, // 其他项目阶段说明
       basicInfo.nationalityType, // 国籍类型
-      JSON.stringify(basicInfo.selectedCountries), // 选择的国家（JSON格式）
+      JSON.stringify(countriesToSave), // 团队选择的国别信息存到 selected_countries
       basicInfo.nationalityOthers // 其他国籍说明
     );
 
@@ -100,6 +118,17 @@ export async function POST(request: NextRequest) {
       // 保存核心成员信息
       for (let i = 0; i < coreMembers.length; i++) {
         const member = coreMembers[i];
+        console.log(`🔍 团队组注册 - 保存核心成员 ${i + 1}:`, {
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          university: member.university,
+          highestDegree: member.highestDegree,
+          organization: member.organization,
+          gender: member.gender,
+          birthDate: member.birthDate
+        });
+        
         await dbOperations.coreMembers.create(
           teamId,
           member.name,
@@ -107,7 +136,15 @@ export async function POST(request: NextRequest) {
           member.nationality,
           member.idType,
           encryptData(member.idNumber), // 加密身份证号
-          undefined // cvPath 将在后面处理
+          undefined, // cvPath 将在后面处理
+          i + 1, // memberOrder: 成员顺序
+          member.gender,
+          member.birthDate,
+          member.phone,
+          member.email,
+          member.university,
+          member.highestDegree,
+          member.organization
         );
 
         // 保存成员CV
@@ -284,8 +321,18 @@ export async function POST(request: NextRequest) {
           ['=== 1. 参赛项目信息 ===', ''],
           ['项目名称', basicInfo.projectName || ''],
           ['核心成员国籍', basicInfo.coreMembersNationality || ''],
-          ['国籍类型', basicInfo.nationalityType || ''],
-          ['选择的国家', basicInfo.selectedCountries?.join(', ') || ''],
+          ['国籍类型', basicInfo.nationalityType === 'single' ? '单一国家' : '多国'],
+          ['选择的国家', basicInfo.selectedCountries?.map(country => {
+            const countryMap = {
+              'china': '中国',
+              'thailand': '泰国', 
+              'cambodia': '柬埔寨',
+              'vietnam': '越南',
+              'laos': '老挝',
+              'myanmar': '缅甸'
+            };
+            return countryMap[country] || country;
+          }).join(', ') || ''],
           ['其他国籍', basicInfo.nationalityOthers || ''],
           ['项目简介', basicInfo.projectBrief || ''],
           ['项目阶段', basicInfo.projectStage || ''],

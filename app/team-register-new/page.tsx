@@ -124,51 +124,29 @@ export default function TeamRegisterPage() {
           console.log('📋 团队数据:', team);
           setTeamId(team.id);
           
-          // 解密团队信息
-          const { decryptData } = await import('@/lib/encryption');
-          let decryptedInfo;
-          try {
-            decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
-          } catch (error) {
-            console.error('解密团队信息失败:', error);
-            // 如果解密失败，使用数据库中的基本信息
-            decryptedInfo = {
-              projectName: team.team_name || '',
-              projectBrief: '',
-              projectStage: team.project_stage || '',
-              projectStageOthers: team.project_stage_others || '',
-              coreMembersNationality: '',
-              nationalityType: team.nationality_type || 'single',
-              selectedCountries: team.selected_countries ? JSON.parse(team.selected_countries) : [],
-              nationalityOthers: team.nationality_others || '',
-              contactPersonName: '',
-              contactPersonPosition: '',
-              contactPersonPhone: '',
-              contactPersonEmail: team.contact_email || '',
-              coreMembers: []
-            };
-          }
+          // 使用API返回的解密信息
+          const decryptedInfo = team.decryptedInfo || {};
           
           // 设置基本信息
           setBasicInfo({
-            projectName: decryptedInfo.projectName || '',
-            coreMembersNationality: decryptedInfo.coreMembersNationality || '',
-            nationalityType: decryptedInfo.nationalityType || 'single',
-            selectedCountries: decryptedInfo.selectedCountries || [],
-            nationalityOthers: decryptedInfo.nationalityOthers || '',
-            projectBrief: decryptedInfo.projectBrief || '',
-            projectStage: decryptedInfo.projectStage || '',
-            projectStageOthers: decryptedInfo.projectStageOthers || '',
+            projectName: decryptedInfo.basicInfo?.projectName || '',
+            coreMembersNationality: decryptedInfo.basicInfo?.coreMembersNationality || '',
+            nationalityType: decryptedInfo.basicInfo?.nationalityType || 'single',
+            selectedCountries: decryptedInfo.basicInfo?.selectedCountries || [],
+            nationalityOthers: decryptedInfo.basicInfo?.nationalityOthers || '',
+            projectBrief: decryptedInfo.basicInfo?.projectBrief || '',
+            projectStage: decryptedInfo.basicInfo?.projectStage || '',
+            projectStageOthers: decryptedInfo.basicInfo?.projectStageOthers || '',
             password: '',
             confirmPassword: ''
           });
           
           // 设置联系人信息
           setContactInfo({
-            contactPersonName: decryptedInfo.contactPersonName || '',
-            contactPersonPosition: decryptedInfo.contactPersonPosition || '',
-            contactPersonPhone: decryptedInfo.contactPersonPhone || '',
-            contactPersonEmail: decryptedInfo.contactPersonEmail || ''
+            contactPersonName: decryptedInfo.contactInfo?.contactPersonName || '',
+            contactPersonPosition: decryptedInfo.contactInfo?.contactPersonPosition || '',
+            contactPersonPhone: decryptedInfo.contactInfo?.contactPersonPhone || '',
+            contactPersonEmail: decryptedInfo.contactInfo?.contactPersonEmail || ''
           });
           
           // 设置核心成员信息 - 优先使用数据库数据
@@ -240,6 +218,13 @@ export default function TeamRegisterPage() {
       return;
     }
 
+    // 验证国别信息
+    if (basicInfo.nationalityType === 'multiple' && basicInfo.selectedCountries.length === 0) {
+      setError('多国别团队必须选择至少一个国家');
+      setLoading(false);
+      return;
+    }
+
     if (!contactInfo.contactPersonName.trim()) {
       setError(t('common.required') === '必填' ? '联系人姓名不能为空' : 'Contact person name is required');
       setLoading(false);
@@ -293,8 +278,26 @@ export default function TeamRegisterPage() {
 
 
       const apiUrl = isUpdateMode ? `/api/teams/update-team/${teamId}` : '/api/teams/register-team';
+      
+      console.log('🔍 前端更新调试:');
+      console.log('   更新模式:', isUpdateMode);
+      console.log('   团队ID:', teamId);
+      console.log('   API URL:', apiUrl);
+      
+      // 准备请求头
+      const headers: any = {};
+      if (isUpdateMode) {
+        // 更新模式需要Authorization header
+        const token = localStorage.getItem('teamToken');
+        console.log('   Token存在:', !!token);
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      
       const response = await fetch(apiUrl, {
         method: isUpdateMode ? 'PUT' : 'POST',
+        headers: headers,
         body: formData,
       });
 
@@ -376,6 +379,13 @@ export default function TeamRegisterPage() {
                 {error}
               </div>
             )}
+
+            {/* 隐私提示 */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-amber-800">
+                {t('common.privacyNotice')}
+              </p>
+            </div>
 
             {/* 1. 参赛项目信息 */}
             <div className="space-y-6">
@@ -516,7 +526,7 @@ export default function TeamRegisterPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-{t('teamRegister.projectInfo.projectBrief')} * {t('common.required') === '必填' ? '(500字以内)' : '(within 500 words)'}
+{t('teamRegister.projectInfo.projectBrief')} *
                 </label>
                 <textarea
                   name="projectBrief"
@@ -809,10 +819,10 @@ export default function TeamRegisterPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">{t('common.required') === '必填' ? '请选择' : 'Please select'}</option>
-                        <option value="{t('teamRegister.coreMembers.degrees.bachelor')}">{t('teamRegister.coreMembers.degrees.bachelor')}</option>
-                        <option value="{t('teamRegister.coreMembers.degrees.master')}">{t('teamRegister.coreMembers.degrees.master')}</option>
-                        <option value="{t('teamRegister.coreMembers.degrees.doctor')}">{t('teamRegister.coreMembers.degrees.doctor')}</option>
-                        <option value="{t('teamRegister.coreMembers.degrees.other')}">{t('teamRegister.coreMembers.degrees.other')}</option>
+                        <option value="本科">{t('teamRegister.coreMembers.degrees.bachelor')}</option>
+                        <option value="硕士">{t('teamRegister.coreMembers.degrees.master')}</option>
+                        <option value="博士">{t('teamRegister.coreMembers.degrees.doctor')}</option>
+                        <option value="其他">{t('teamRegister.coreMembers.degrees.other')}</option>
                       </select>
                     </div>
 

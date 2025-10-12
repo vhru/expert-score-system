@@ -540,6 +540,20 @@ export const dbOperations = {
       });
     },
     
+    findByExpertAndTeam: (expertId: number, teamName: string): Promise<any[]> => {
+      return new Promise((resolve, reject) => {
+        db.all(`
+          SELECT ra.*, f.original_name, f.file_path, f.mime_type, f.team_name
+          FROM review_assignments ra
+          JOIN files f ON ra.file_id = f.id
+          WHERE ra.expert_id = ? AND f.team_name = ?
+        `, [expertId, teamName], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+    },
+    
     findAll: (): Promise<any[]> => {
       return new Promise((resolve, reject) => {
         db.all(`
@@ -690,11 +704,11 @@ export const dbOperations = {
 
   // 核心成员操作
   coreMembers: {
-    create: (teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string): Promise<any> => {
+    create: (teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, memberOrder?: number): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO core_members (team_id, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [teamId, name, position, nationality, idType, idNumber, cvPath || null],
+          'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });

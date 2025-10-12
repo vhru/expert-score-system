@@ -92,9 +92,9 @@ export async function POST(request: NextRequest) {
       enterpriseInfo.unifiedSocialCreditCode,
       basicInfo.projectStage, // 项目阶段
       basicInfo.projectStageOthers, // 其他项目阶段说明
-      basicInfo.nationalityType, // 国籍类型
-      JSON.stringify(basicInfo.selectedCountries), // 选择的国家（JSON格式）
-      basicInfo.nationalityOthers // 其他国籍说明
+      'single', // 企业固定为单一国别
+      JSON.stringify([basicInfo.registrationCountry]), // 企业注册国家存到 selected_countries，格式化为JSON数组
+      '' // nationality_others 留空
     );
 
     if (result.changes > 0 || result.affectedRows > 0) {
@@ -103,6 +103,17 @@ export async function POST(request: NextRequest) {
       // 保存核心成员信息
       for (let i = 0; i < coreMembers.length; i++) {
         const member = coreMembers[i];
+        console.log(`🔍 企业组注册 - 保存核心成员 ${i + 1}:`, {
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          university: member.university,
+          highestDegree: member.highestDegree,
+          organization: member.organization,
+          gender: member.gender,
+          birthDate: member.birthDate
+        });
+        
         await dbOperations.coreMembers.create(
           teamId,
           member.name,
@@ -110,7 +121,15 @@ export async function POST(request: NextRequest) {
           member.nationality,
           member.idType,
           encryptData(member.idNumber), // 加密身份证号
-          undefined // cvPath 将在后面处理
+          undefined, // cvPath 将在后面处理
+          i + 1, // memberOrder: 成员顺序
+          member.gender,
+          member.birthDate,
+          member.phone,
+          member.email,
+          member.university,
+          member.highestDegree,
+          member.organization
         );
 
         // 保存成员CV
@@ -295,7 +314,17 @@ export async function POST(request: NextRequest) {
           // 1. 参赛项目信息
           ['=== 1. 参赛项目信息 ===', ''],
           ['项目名称', basicInfo.projectName || ''],
-          ['企业注册国家', basicInfo.registrationCountry || ''],
+          ['企业注册国家', (() => {
+            const countryMap = {
+              'china': '中国',
+              'thailand': '泰国', 
+              'cambodia': '柬埔寨',
+              'vietnam': '越南',
+              'laos': '老挝',
+              'myanmar': '缅甸'
+            };
+            return countryMap[basicInfo.registrationCountry] || basicInfo.registrationCountry || '';
+          })()],
           ['项目简介', basicInfo.projectBrief || ''],
           ['项目阶段', basicInfo.projectStage || ''],
           ['项目阶段其他', basicInfo.projectStageOthers || ''],

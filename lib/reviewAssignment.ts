@@ -40,16 +40,34 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
         continue;
       }
 
-      // 检查是否已经分配过 - 如果该团队有任何文件被分配过，就跳过整个团队
+      // 检查是否已经完整分配过 - 检查该团队是否已经有完整的专家分配
       const allAssignments = await dbOperations.assignments.findAll() as any[];
       const teamFileIds = teamFiles.map(f => f.id);
       const existingAssignments = allAssignments.filter(a => 
         teamFileIds.includes(a.file_id)
       );
 
+      // 如果该团队的文件已经被分配，检查是否分配完整
       if (existingAssignments.length > 0) {
-        console.log(`团队 ${team.team_name} 已经分配过专家，跳过`);
-        continue;
+        // 统计每个专家分配的文件数量
+        const expertFileCounts = {};
+        existingAssignments.forEach(assignment => {
+          const expertId = assignment.expert_id;
+          expertFileCounts[expertId] = (expertFileCounts[expertId] || 0) + 1;
+        });
+
+        // 检查是否所有分配该团队的专家都分配了所有文件
+        const assignedExpertIds = Object.keys(expertFileCounts);
+        const isCompleteAssignment = assignedExpertIds.every(expertId => 
+          expertFileCounts[expertId] === teamFiles.length
+        );
+
+        if (isCompleteAssignment) {
+          console.log(`团队 ${team.team_name} 已经完整分配过专家，跳过`);
+          continue;
+        } else {
+          console.log(`团队 ${team.team_name} 分配不完整，继续分配`);
+        }
       }
 
       // 根据团队类型筛选专家
@@ -61,19 +79,37 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
         continue;
       }
 
-      // 随机选择专家
-      const shuffledExperts = matchingExperts.sort(() => 0.5 - Math.random());
-      const selectedExperts = shuffledExperts.slice(0, Math.min(2, matchingExperts.length));
+      // 选择工作负载最少的专家（负载均衡）
+      const expertWorkloads = await Promise.all(
+        matchingExperts.map(async (expert) => {
+          const assignments = await dbOperations.assignments.findByExpert(expert.id) as any[];
+          return {
+            expert,
+            workload: assignments.length
+          };
+        })
+      );
+      
+      // 按工作负载排序，选择负载最少的2个专家
+      const sortedExperts = expertWorkloads.sort((a, b) => a.workload - b.workload);
+      const selectedExperts = sortedExperts.slice(0, Math.min(2, matchingExperts.length)).map(item => item.expert);
+      
+      console.log(`📊 专家负载情况:`, expertWorkloads.map(item => 
+        `专家${item.expert.id}(${item.expert.username}): ${item.workload}个任务`
+      ).join(', '));
 
-      // 创建分配记录 - 为每个文件分配2个专家
-      for (const file of teamFiles) {
-        for (const expert of selectedExperts) {
-          // 检查是否已经存在分配
-          const existingAssignments = await dbOperations.assignments.findByExpertAndFile(expert.id, file.id) as any[];
-          console.log(`🔍 检查分配: 专家${expert.id} 文件${file.id} 现有分配:`, existingAssignments.length);
-          if (existingAssignments.length === 0) {
-            await dbOperations.assignments.create(file.id, expert.id);
-            console.log(`✅ 创建新分配: 专家${expert.id} 文件${file.id}`);
+      // 创建分配记录 - 为每个专家分配该团队的所有文件
+      for (const expert of selectedExperts) {
+        // 检查该专家是否已经分配过这个团队的任何文件
+        const existingAssignments = await dbOperations.assignments.findByExpertAndTeam(expert.id, team.team_name) as any[];
+        console.log(`🔍 检查专家${expert.id}对团队${team.team_name}的现有分配:`, existingAssignments.length);
+        
+        if (existingAssignments.length === 0) {
+          // 为该专家分配该团队（按团队分配，不是按文件）
+          // 使用第一个文件作为代表，但实际评审的是整个团队
+          if (teamFiles.length > 0) {
+            await dbOperations.assignments.create(teamFiles[0].id, expert.id);
+            console.log(`✅ 创建新分配: 专家${expert.id} 团队${team.team_name} (使用文件${teamFiles[0].id}作为代表)`);
             
             assignments.push({
               team_id: team.id,
@@ -83,12 +119,12 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
               expert_type: expert.expert_type,
               team_type: teamType,
               status: 'assigned',
-              file_id: file.id,
-              file_name: file.original_name
+              file_id: teamFiles[0].id,
+              file_name: `${team.team_name}_团队评审`
             });
-          } else {
-            console.log(`⚠️ 跳过重复分配: 专家${expert.id} 文件${file.id}`);
           }
+        } else {
+          console.log(`⚠️ 跳过重复分配: 专家${expert.id}已经分配过团队${team.team_name}`);
         }
       }
     }
@@ -139,29 +175,57 @@ export async function getAllAssignments(): Promise<any[]> {
 
 export async function getReviewStatistics(): Promise<any> {
   try {
-    const stats = await dbOperations.assignments.getStatistics() as any;
-    const teams = await dbOperations.teams.findAll() as any[];
-    const files = await dbOperations.files.findAll() as any[];
+    console.log('📊 开始获取统计数据...');
+    
+    // 获取分配统计
+    let stats = {};
+    try {
+      stats = await dbOperations.assignments.getStatistics() as any;
+      console.log('📊 分配统计数据:', stats);
+    } catch (error) {
+      console.error('❌ 获取分配统计失败:', error);
+    }
+    
+    // 获取团队统计
+    let teams = [];
+    try {
+      teams = await dbOperations.teams.findAll() as any[];
+      console.log('📊 团队数据:', teams.length, '个团队');
+    } catch (error) {
+      console.error('❌ 获取团队数据失败:', error);
+    }
+    
+    // 获取文件统计
+    let files = [];
+    try {
+      files = await dbOperations.files.findAll() as any[];
+      console.log('📊 文件数据:', files.length, '个文件');
+    } catch (error) {
+      console.error('❌ 获取文件数据失败:', error);
+    }
     
     const teamStats = {
-      total_teams: teams.length,
-      enterprise_teams: teams.filter(t => t.is_enterprise).length,
-      team_groups: teams.filter(t => !t.is_enterprise).length,
-      active_teams: teams.filter(t => t.status === 'active').length
+      total_teams: teams.length || 0,
+      enterprise_teams: teams.filter(t => t.is_enterprise).length || 0,
+      team_groups: teams.filter(t => !t.is_enterprise).length || 0,
+      active_teams: teams.filter(t => t.status === 'active').length || 0
     };
 
     const fileStats = {
-      total_files: files.length,
-      completed_files: files.filter(f => f.upload_status === 'completed').length
+      total_files: files.length || 0,
+      completed_files: files.filter(f => f.upload_status === 'completed').length || 0
     };
 
-    return {
+    const result = {
       assignments: stats || {},
       teams: teamStats,
       files: fileStats
     };
+    
+    console.log('📊 最终统计数据:', result);
+    return result;
   } catch (error) {
-    console.error('Failed to get review statistics:', error);
+    console.error('❌ 获取统计数据失败:', error);
     return {
       assignments: {},
       teams: {},
