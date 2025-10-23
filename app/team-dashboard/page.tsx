@@ -324,15 +324,7 @@ export default function TeamDashboard() {
                 >
                   {t[language].switchLanguage}
                 </button>
-                {/* 审核通过后隐藏提交新作品链接 */}
-                {!isAuditPassed && (
-                  <a 
-                    href="/team-submit" 
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    {t[language].submitNew}
-                  </a>
-                )}
+                {/* 提交新作品功能已屏蔽 */}
                 <button
                   onClick={handleLogout}
                   className="text-gray-600 hover:text-gray-800 text-sm font-medium"

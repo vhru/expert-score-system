@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { dbOperations } from './database-adapter';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'expert_review_jwt_secret_2024_production';
 
 export interface User {
   id: number;

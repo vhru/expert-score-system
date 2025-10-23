@@ -211,56 +211,6 @@ export const dbOperations = {
       });
     },
     
-    update: (id: number, updateData: any): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        const fields = [];
-        const values = [];
-        
-        if (updateData.username) {
-          fields.push('username = ?');
-          values.push(updateData.username);
-        }
-        if (updateData.password) {
-          fields.push('password = ?');
-          values.push(updateData.password);
-        }
-        if (updateData.encrypted_info !== undefined) {
-          fields.push('encrypted_info = ?');
-          values.push(updateData.encrypted_info);
-        }
-        if (updateData.expert_type) {
-          fields.push('expert_type = ?');
-          values.push(updateData.expert_type);
-        }
-        
-        if (fields.length === 0) {
-          resolve({ changes: 0 });
-          return;
-        }
-        
-        fields.push('updated_at = CURRENT_TIMESTAMP');
-        values.push(id);
-        
-        db.run(
-          `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
-          values,
-          function(err) {
-            if (err) reject(err);
-            else resolve({ changes: this.changes });
-          }
-        );
-      });
-    },
-    
-    delete: (id: number): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
-          if (err) reject(err);
-          else resolve({ changes: this.changes });
-        });
-      });
-    },
-    
     findById: (id: number): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
@@ -593,19 +543,6 @@ export const dbOperations = {
       });
     },
     
-    updateStatus: (id: number, status: string, score?: number, comments?: string): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        db.run(`
-          UPDATE review_assignments 
-          SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP 
-          WHERE id = ?
-        `, [status, score || null, comments || null, id], function(err) {
-          if (err) reject(err);
-          else resolve({ changes: this.changes });
-        });
-      });
-    },
-    
     getStatistics: (): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.get(`
@@ -704,11 +641,11 @@ export const dbOperations = {
 
   // 核心成员操作
   coreMembers: {
-    create: (teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, memberOrder?: number): Promise<any> => {
+    create: (teamId: number, memberOrder: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, gender?: string, birthDate?: string, phone?: string, email?: string, university?: string, highestDegree?: string, organization?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null],
+          'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path, gender, birth_date, phone, email, university, highest_degree, organization) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null, gender || null, birthDate || null, phone || null, email || null, university || null, highestDegree || null, organization || null],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });

@@ -81,16 +81,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `专家 ${alreadyAssignedNames.join(', ')} 已经分配过此团队` }, { status: 400 });
     }
 
-    // 创建分配记录 - 为每个文件分配所有选中的专家
+    // 创建分配记录 - 为每个专家分配该团队的所有文件
     const results = [];
-    for (const file of teamFiles) {
-      for (const expertId of expertIds) {
-        try {
-          const result = await dbOperations.assignments.create(file.id, expertId);
-          results.push(result);
-        } catch (error) {
-          console.error(`Failed to assign file ${file.id} to expert ${expertId}:`, error);
+    for (const expertId of expertIds) {
+      // 检查该专家是否已经分配过这个团队的任何文件
+      const existingAssignments = await dbOperations.assignments.findByExpertAndTeam(expertId, team.team_name) as any[];
+      console.log(`🔍 手动分配检查: 专家${expertId}对团队${team.team_name}的现有分配:`, existingAssignments.length);
+      
+      if (existingAssignments.length === 0) {
+        // 为该专家分配该团队（按团队分配，不是按文件）
+        // 使用第一个文件作为代表，但实际评审的是整个团队
+        if (teamFiles.length > 0) {
+          try {
+            const result = await dbOperations.assignments.create(teamFiles[0].id, expertId);
+            results.push(result);
+            console.log(`✅ 手动分配成功: 专家${expertId} 团队${team.team_name} (使用文件${teamFiles[0].id}作为代表)`);
+          } catch (error) {
+            console.error(`Failed to assign team ${team.team_name} to expert ${expertId}:`, error);
+          }
         }
+      } else {
+        console.log(`⚠️ 跳过重复分配: 专家${expertId}已经分配过团队${team.team_name}`);
       }
     }
 

@@ -36,6 +36,8 @@ export interface Translations {
     admin: string;
     required: string;
     optional: string;
+    privacyNotice: string;
+    helpCenter: string;
   };
   
   // 门户页面
@@ -347,6 +349,8 @@ const zhTranslations: Translations = {
     admin: '管理员',
     required: '必填',
     optional: '选填',
+    privacyNotice: '⚠️ 重要提示：所有上传的信息仅用于本次STIC大赛评审，我们将严格保护您的隐私信息，不会用于其他用途。',
+    helpCenter: '帮助中心',
   },
   portal: {
     title: '澜湄国家科技创新大赛',
@@ -383,7 +387,7 @@ const zhTranslations: Translations = {
       title: '1. 参赛项目信息',
       projectName: '项目名称',
       registrationCountry: '企业注册国家',
-      projectBrief: '项目简介',
+      projectBrief: '项目简介（2000字以内， 中英双语）',
       projectStage: '项目阶段',
       stages: {
         development: '研发阶段',
@@ -417,7 +421,7 @@ const zhTranslations: Translations = {
       registeredCapital: '注册资本',
       phone: '电话',
       website: '网站',
-      enterpriseOverview: '企业简介',
+      enterpriseOverview: '企业简介（2000字以内， 中英双语）',
     },
     contactInfo: {
       title: '3. 项目联系人',
@@ -463,7 +467,7 @@ const zhTranslations: Translations = {
       commitmentLetter: '参赛承诺书',
       businessPlanChinese: '商业计划书（中文版）',
       businessPlanEnglish: '商业计划书（英文版）',
-      presentation: '演示文稿',
+      presentation: '演示文稿（中英双语版本）',
       supplementaryMaterials: '其他补充材料',
     },
     password: {
@@ -483,7 +487,7 @@ const zhTranslations: Translations = {
       title: '1. 参赛项目信息',
       projectName: '项目名称',
       coreMembersNationality: '核心成员国籍',
-      projectBrief: '项目简介',
+      projectBrief: '项目简介（2000字以内， 中英双语）',
       projectStage: '项目阶段',
       stages: {
         development: '研发阶段',
@@ -549,12 +553,12 @@ const zhTranslations: Translations = {
       commitmentLetter: '参赛承诺书',
       technicalInfoChinese: '项目技术可行性分析（中文版）',
       technicalInfoEnglish: '项目技术可行性分析（英文版）',
-      presentation: '演示文稿',
+      presentation: '演示文稿（中英双语版本）',
       supplementaryMaterials: '其他补充材料',
     },
     images: {
       title: '团队图片',
-      description: '可上传最多5张团队相关图片（PNG/JPG/GIF格式，每张不超过10MB）',
+      description: '可上传最多5张团队相关图片（PNG/JPG格式，每张不超过10MB）',
       image: '图片',
     },
     password: {
@@ -646,6 +650,8 @@ const enTranslations: Translations = {
     admin: 'Admin',
     required: 'Required',
     optional: 'Optional',
+    privacyNotice: '⚠️ Important Notice: All uploaded information is used solely for the STIC competition review. We strictly protect your privacy and will not use your information for any other purposes.',
+    helpCenter: 'Help Center',
   },
   portal: {
     title: 'Lancang-Mekong Countries Science and Technology Innovation Competition',
@@ -853,7 +859,7 @@ const enTranslations: Translations = {
     },
     images: {
       title: 'Team Images',
-      description: 'Upload up to 5 team-related images (PNG/JPG/GIF format, max 10MB each)',
+      description: 'Upload up to 5 team-related images (PNG/JPG format, max 10MB each)',
       image: 'Image',
     },
     password: {

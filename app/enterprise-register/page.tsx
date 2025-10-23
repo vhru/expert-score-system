@@ -152,6 +152,7 @@ export default function EnterpriseRegisterPage() {
       return;
     }
 
+
     if (!basicInfo.projectStage) {
       setError(t('common.required') === '必填' ? '请选择项目阶段' : 'Please select project stage');
       setLoading(false);
@@ -324,6 +325,13 @@ export default function EnterpriseRegisterPage() {
               </div>
             )}
 
+            {/* 隐私提示 */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-amber-800">
+                {t('common.privacyNotice')}
+              </p>
+            </div>
+
             {/* 1. 参赛项目信息 */}
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.projectInfo.title')}</h2>
@@ -365,11 +373,12 @@ export default function EnterpriseRegisterPage() {
                     <option value="others">{t('enterpriseRegister.projectInfo.countries.others')}</option>
                   </select>
                 </div>
+
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-{t('enterpriseRegister.projectInfo.projectBrief')} * {t('common.required') === '必填' ? '(500字以内)' : '(within 500 words)'}
+{t('enterpriseRegister.projectInfo.projectBrief')} *
                 </label>
                 <textarea
                   name="projectBrief"
@@ -377,11 +386,11 @@ export default function EnterpriseRegisterPage() {
                   onChange={handleBasicInfoChange}
                   required
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                    placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
-                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/2000</p>
               </div>
 
 
@@ -471,7 +480,7 @@ export default function EnterpriseRegisterPage() {
                     onChange={handleEnterpriseInfoChange}
                     required
                     min="2019"
-                    max="2024"
+                    max="2025"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -549,17 +558,17 @@ export default function EnterpriseRegisterPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('enterpriseRegister.enterpriseInfo.enterpriseOverview') + " (500字以内)"}
+                  {t('enterpriseRegister.enterpriseInfo.enterpriseOverview')}
                 </label>
                 <textarea
                   name="enterpriseOverview"
                   value={enterpriseInfo.enterpriseOverview}
                   onChange={handleEnterpriseInfoChange}
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-sm text-gray-500 mt-1">{enterpriseInfo.enterpriseOverview.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{enterpriseInfo.enterpriseOverview.length}/2000</p>
               </div>
             </div>
 

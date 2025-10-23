@@ -11,7 +11,9 @@ interface TeamAudit {
   project_name?: string;
   project_brief?: string;
   project_stage?: string;
+  project_stage_others?: string;
   contact_person_name?: string;
+  contact_person_position?: string;
   contact_person_phone?: string;
   contact_person_email?: string;
   registration_country?: string;
@@ -23,6 +25,10 @@ interface TeamAudit {
   registered_capital_usd?: number;
   website?: string;
   enterprise_overview?: string;
+  enterprise_phone?: string;
+  nationality_type?: string;
+  selected_countries?: string;
+  nationality_others?: string;
   audit_status: 'pending' | 'approved' | 'rejected';
   audit_notes?: string;
   audited_at?: string;
@@ -291,10 +297,45 @@ export default function AdminAuditPage() {
                       <div className="space-y-2 text-sm">
                         <p><span className="font-medium">团队名称:</span> {selectedTeam.team_name}</p>
                         <p><span className="font-medium">联系邮箱:</span> {selectedTeam.contact_email}</p>
-                        <p><span className="font-medium">团队类型:</span> {selectedTeam.is_enterprise ? '企业团队' : '普通团队'}</p>
+                        <p><span className="font-medium">团队类型:</span> {selectedTeam.is_enterprise ? '企业团队' : '团队'}</p>
                         {selectedTeam.project_name && <p><span className="font-medium">项目名称:</span> {selectedTeam.project_name}</p>}
                         {selectedTeam.project_brief && <p><span className="font-medium">项目简介:</span> {selectedTeam.project_brief}</p>}
                         {selectedTeam.project_stage && <p><span className="font-medium">项目阶段:</span> {selectedTeam.project_stage}</p>}
+                        {selectedTeam.project_stage_others && <p><span className="font-medium">项目阶段其他:</span> {selectedTeam.project_stage_others}</p>}
+                        {selectedTeam.is_enterprise ? (
+                          // 企业团队显示注册国家
+                          selectedTeam.nationality_others && <p><span className="font-medium">企业注册国家:</span> {selectedTeam.nationality_others}</p>
+                        ) : (
+                          // 普通团队显示核心成员国籍
+                          <>
+                            {selectedTeam.nationality_type && <p><span className="font-medium">国别类型:</span> {selectedTeam.nationality_type === 'single' ? '单一国别' : '多国别'}</p>}
+                            {selectedTeam.selected_countries && (
+                              <p><span className="font-medium">选择的国家:</span> {
+                                (() => {
+                                  try {
+                                    const countries = JSON.parse(selectedTeam.selected_countries);
+                                    if (Array.isArray(countries)) {
+                                      // 将英文键转换为中文名称
+                                      const countryMap: { [key: string]: string } = {
+                                        'china': '中国',
+                                        'thailand': '泰国',
+                                        'cambodia': '柬埔寨',
+                                        'vietnam': '越南',
+                                        'laos': '老挝',
+                                        'myanmar': '缅甸'
+                                      };
+                                      return countries.map(country => countryMap[country] || country).join(', ');
+                                    }
+                                    return selectedTeam.selected_countries;
+                                  } catch {
+                                    return selectedTeam.selected_countries;
+                                  }
+                                })()
+                              }</p>
+                            )}
+                            {selectedTeam.nationality_others && <p><span className="font-medium">其他国别说明:</span> {selectedTeam.nationality_others}</p>}
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -303,6 +344,7 @@ export default function AdminAuditPage() {
                       <h3 className="text-md font-medium text-gray-900 mb-3">联系人信息</h3>
                       <div className="space-y-2 text-sm">
                         {selectedTeam.contact_person_name && <p><span className="font-medium">联系人:</span> {selectedTeam.contact_person_name}</p>}
+                        {selectedTeam.contact_person_position && <p><span className="font-medium">联系人职务:</span> {selectedTeam.contact_person_position}</p>}
                         {selectedTeam.contact_person_phone && <p><span className="font-medium">联系电话:</span> {selectedTeam.contact_person_phone}</p>}
                         {selectedTeam.contact_person_email && <p><span className="font-medium">联系邮箱:</span> {selectedTeam.contact_person_email}</p>}
                         {selectedTeam.registration_country && <p><span className="font-medium">注册国家:</span> {selectedTeam.registration_country}</p>}
@@ -320,6 +362,8 @@ export default function AdminAuditPage() {
                           {selectedTeam.enterprise_name && <p><span className="font-medium">企业名称:</span> {selectedTeam.enterprise_name}</p>}
                           {selectedTeam.unified_social_credit_code && <p><span className="font-medium">统一社会信用代码:</span> {selectedTeam.unified_social_credit_code}</p>}
                           {selectedTeam.legal_representative && <p><span className="font-medium">法定代表人:</span> {selectedTeam.legal_representative}</p>}
+                          {selectedTeam.registration_year && <p><span className="font-medium">注册年份:</span> {selectedTeam.registration_year}</p>}
+                          {selectedTeam.enterprise_phone && <p><span className="font-medium">电话:</span> {selectedTeam.enterprise_phone}</p>}
                         </div>
                         <div>
                           {selectedTeam.headquarters_location && <p><span className="font-medium">总部位置:</span> {selectedTeam.headquarters_location}</p>}
@@ -344,12 +388,17 @@ export default function AdminAuditPage() {
                         {selectedTeam.coreMembers.map((member, index) => (
                           <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
                             <p><span className="font-medium">姓名:</span> {member.name}</p>
-                            <p><span className="font-medium">国籍:</span> {member.nationality}</p>
-                            <p><span className="font-medium">性别:</span> {member.gender}</p>
-                            <p><span className="font-medium">出生日期:</span> {member.birth_date}</p>
-                            <p><span className="font-medium">学历:</span> {member.highest_degree}</p>
-                            <p><span className="font-medium">组织:</span> {member.organization}</p>
-                            <p><span className="font-medium">职位:</span> {member.position}</p>
+                            <p><span className="font-medium">国籍:</span> {member.nationality || '未填写'}</p>
+                            {member.gender && <p><span className="font-medium">性别:</span> {member.gender}</p>}
+                            {member.birth_date && <p><span className="font-medium">出生年月:</span> {member.birth_date}</p>}
+                            {member.id_type && <p><span className="font-medium">证件类型:</span> {member.id_type === 'id_card' ? '身份证' : '护照'}</p>}
+                            {member.id_number && <p><span className="font-medium">证件号码:</span> {member.id_number}</p>}
+                            {member.phone && <p><span className="font-medium">电话:</span> {member.phone}</p>}
+                            {member.email && <p><span className="font-medium">电子邮箱:</span> {member.email}</p>}
+                            {member.university && <p><span className="font-medium">毕业院校:</span> {member.university}</p>}
+                            {member.highest_degree && <p><span className="font-medium">学历:</span> {member.highest_degree}</p>}
+                            {member.organization && <p><span className="font-medium">所在单位:</span> {member.organization}</p>}
+                            <p><span className="font-medium">职位/职称:</span> {member.position}</p>
                           </div>
                         ))}
                       </div>

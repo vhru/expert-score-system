@@ -534,11 +534,11 @@ export default function TeamRegisterPage() {
                   onChange={handleBasicInfoChange}
                   required
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
-                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/2000</p>
               </div>
 
 

@@ -131,40 +131,29 @@ export default function ExpertReviewInterface({ user, token, onLogout }: ExpertR
     setMessage('');
 
     try {
-      // 为团队的所有文件提交评审
-      const promises = selectedTeam.assignments.map(assignment => 
-        fetch('/api/expert/submit-review', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            assignmentId: assignment.id,
-            score: score,
-            comments: reviewForm.comments.trim()
-          }),
-        })
-      );
+      // 为团队提交评审（现在按团队分配，只有一个分配记录）
+      const response = await fetch('/api/expert/submit-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          assignmentId: selectedTeam.assignments[0].id, // 使用第一个（也是唯一的）分配记录
+          score: score,
+          comments: reviewForm.comments.trim()
+        }),
+      });
 
-      const responses = await Promise.all(promises);
-      const results = await Promise.all(responses.map(r => r.json()));
-
-      const successCount = results.filter(r => r.success).length;
-      const totalCount = results.length;
+      const result = await response.json();
       
-      if (successCount === totalCount) {
+      if (result.success) {
         setMessage('团队评审提交成功！');
         setMessageType('success');
         setSelectedTeam(null);
         fetchAssignments(); // 刷新任务列表
-      } else if (successCount > 0) {
-        setMessage(`评审提交部分成功：${successCount}/${totalCount} 个任务已提交`);
-        setMessageType('success');
-        setSelectedTeam(null);
-        fetchAssignments(); // 刷新任务列表
       } else {
-        setMessage('评审提交失败，请重试');
+        setMessage(result.error || '评审提交失败，请重试');
         setMessageType('error');
       }
     } catch (error) {

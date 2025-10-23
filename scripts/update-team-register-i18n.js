@@ -16,7 +16,7 @@ const translations = {
   '核心成员国籍 * / Core Members Nationality *': 't(\'teamRegister.projectInfo.coreMembersNationality\') + " *"',
   '单一国家 / Single Country': 't(\'teamRegister.projectInfo.nationalityOptions.single\')',
   '多国 / Multiple Countries': 't(\'teamRegister.projectInfo.nationalityOptions.multiple\')',
-  '项目简介 * / Project Brief * (500字以内)': 't(\'teamRegister.projectInfo.projectBrief\') + " * (500字以内)"',
+  '项目简介 * / Project Brief * (2000字以内)': 't(\'teamRegister.projectInfo.projectBrief\') + " * (2000字以内)"',
   '项目阶段 * / Project Stage *': 't(\'teamRegister.projectInfo.projectStage\') + " *"',
   '研发阶段': 't(\'teamRegister.projectInfo.stages.development\')',
   '实验室测试': 't(\'teamRegister.projectInfo.stages.labTest\')',

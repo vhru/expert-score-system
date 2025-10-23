@@ -21,6 +21,12 @@ export default function PortalPage() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <a 
+                href="/help-center" 
+                className="text-blue-600 hover:text-blue-500 font-medium"
+              >
+                {t('common.helpCenter')}
+              </a>
               <LanguageSwitcherNew />
             </div>
           </div>
@@ -33,9 +39,16 @@ export default function PortalPage() {
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             {t('portal.title')}
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
             {t('portal.subtitle')}
           </p>
+          
+          {/* 隐私提示 */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-4xl mx-auto">
+            <p className="text-sm text-amber-800">
+              {t('common.privacyNotice')}
+            </p>
+          </div>
         </div>
 
         {/* Role Selection */}
@@ -43,7 +56,7 @@ export default function PortalPage() {
           {/* 企业组专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow flex flex-col">
             <div className="text-5xl mb-4">🏢</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamSection.title')} / Enterprise</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamSection.title')}</h3>
             <p className="text-sm text-gray-600 mb-4 flex-grow">
               {t('portal.teamSection.description')}
             </p>
@@ -66,7 +79,7 @@ export default function PortalPage() {
           {/* 团队组专区 */}
           <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow flex flex-col">
             <div className="text-5xl mb-4">👥</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamGroupSection.title')} / Team</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">{t('portal.teamGroupSection.title')}</h3>
             <p className="text-sm text-gray-600 mb-4 flex-grow">
               {t('portal.teamGroupSection.description')}
             </p>

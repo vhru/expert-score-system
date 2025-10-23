@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查文件类型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedTypes.includes(photo.type)) {
-      return NextResponse.json({ error: '只支持JPG、PNG、GIF格式的图片' }, { status: 400 });
+      return NextResponse.json({ error: '只支持JPG、PNG格式的图片' }, { status: 400 });
     }
 
     // 创建上传目录

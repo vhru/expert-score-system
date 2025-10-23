@@ -23,7 +23,8 @@ export default function TeamLoginPage() {
       switchLanguage: 'English',
       emailRequired: '请输入邮箱和密码',
       loginSuccess: '登录成功',
-      loginFailed: '登录失败'
+      loginFailed: '登录失败',
+      privacyNotice: '⚠️ 重要提示：所有上传的信息仅用于本次STIC大赛评审，我们将严格保护您的隐私信息，不会用于其他用途。'
     },
     en: {
       title: 'Team Login',
@@ -34,7 +35,8 @@ export default function TeamLoginPage() {
       switchLanguage: '中文',
       emailRequired: 'Please enter email and password',
       loginSuccess: 'Login successful',
-      loginFailed: 'Login failed'
+      loginFailed: 'Login failed',
+      privacyNotice: '⚠️ Important Notice: All uploaded information is used solely for the STIC competition review. We strictly protect your privacy and will not use your information for any other purposes.'
     }
   };
 
@@ -113,6 +115,13 @@ export default function TeamLoginPage() {
           </p>
         </div>
         
+        {/* 隐私提示 */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-800">
+            {t[language].privacyNotice}
+          </p>
+        </div>
+        
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -170,12 +179,7 @@ export default function TeamLoginPage() {
             >
               {language === 'zh' ? '← 返回系统首页' : '← Back to Home'}
             </a>
-            <div className="text-sm text-gray-600">
-              {language === 'zh' ? '还没有团队账号？' : "Don't have a team account?"}{' '}
-              <a href="/team-register" className="font-medium text-blue-600 hover:text-blue-500">
-                {language === 'zh' ? '立即注册' : 'Register Now'}
-              </a>
-            </div>
+            {/* 注册链接已移除 - 请通过门户页面进行完整注册 */}
           </div>
         </form>
       </div>

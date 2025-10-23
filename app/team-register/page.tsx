@@ -32,10 +32,10 @@ export default function TeamRegisterPage() {
     const selectedFiles = Array.from(e.target.files || []);
     
     // 检查文件类型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     const validFiles = selectedFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        setMessage(`文件 ${file.name} 格式不支持，只支持 JPG、PNG、GIF 格式`);
+        setMessage(`文件 ${file.name} 格式不支持，只支持 JPG、PNG 格式`);
         setMessageType('error');
         return false;
       }
@@ -294,12 +294,12 @@ export default function TeamRegisterPage() {
             {/* 图片上传 */}
             <div className="border-t pt-6">
               <label className="form-label">
-                团队图片 (最多5张，支持JPG、PNG、GIF格式)
+                团队图片 (最多5张，支持JPG、PNG格式)
               </label>
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/jpg,image/png,image/gif"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleImageChange}
                 className="form-input"
               />

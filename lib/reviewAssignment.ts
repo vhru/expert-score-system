@@ -110,18 +110,18 @@ export async function assignReviewsToExperts(): Promise<{ success: boolean; mess
           if (teamFiles.length > 0) {
             await dbOperations.assignments.create(teamFiles[0].id, expert.id);
             console.log(`✅ 创建新分配: 专家${expert.id} 团队${team.team_name} (使用文件${teamFiles[0].id}作为代表)`);
-            
-            assignments.push({
-              team_id: team.id,
-              team_name: team.team_name,
-              expert_id: expert.id,
-              expert_name: expert.username,
-              expert_type: expert.expert_type,
-              team_type: teamType,
+
+        assignments.push({
+          team_id: team.id,
+          team_name: team.team_name,
+          expert_id: expert.id,
+          expert_name: expert.username,
+          expert_type: expert.expert_type,
+          team_type: teamType,
               status: 'assigned',
               file_id: teamFiles[0].id,
               file_name: `${team.team_name}_团队评审`
-            });
+        });
           }
         } else {
           console.log(`⚠️ 跳过重复分配: 专家${expert.id}已经分配过团队${team.team_name}`);
@@ -216,10 +216,20 @@ export async function getReviewStatistics(): Promise<any> {
       completed_files: files.filter(f => f.upload_status === 'completed').length || 0
     };
 
+    // 获取国别统计
+    let nationalityStats = {};
+    try {
+      nationalityStats = await getNationalityStatistics(teams);
+      console.log('📊 国别统计数据:', nationalityStats);
+    } catch (error) {
+      console.error('❌ 获取国别统计失败:', error);
+    }
+
     const result = {
       assignments: stats || {},
       teams: teamStats,
-      files: fileStats
+      files: fileStats,
+      nationality: nationalityStats
     };
     
     console.log('📊 最终统计数据:', result);
@@ -229,7 +239,198 @@ export async function getReviewStatistics(): Promise<any> {
     return {
       assignments: {},
       teams: {},
-      files: {}
+      files: {},
+      nationality: {}
     };
+  }
+}
+
+// 新增：获取国别统计数据的函数
+async function getNationalityStatistics(teams: any[]): Promise<any> {
+  try {
+    const { decryptData } = await import('./encryption');
+    
+    console.log('🔍 开始分析国别统计数据，总团队数:', teams.length);
+    
+    // 企业组国别统计
+    const enterpriseTeams = teams.filter(t => t.is_enterprise);
+    const enterpriseCountryStats: { [key: string]: number } = {};
+    
+    console.log('🏢 企业组数量:', enterpriseTeams.length);
+    
+    for (const team of enterpriseTeams) {
+      try {
+        // 企业组：从加密信息中获取注册国家
+        const decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
+        const registrationCountry = decryptedInfo?.enterpriseInfo?.registrationCountry;
+        console.log(`企业组 ${team.team_name}: 注册国家 = ${registrationCountry}`);
+        
+        if (registrationCountry) {
+          enterpriseCountryStats[registrationCountry] = (enterpriseCountryStats[registrationCountry] || 0) + 1;
+        }
+      } catch (error) {
+        console.warn(`解密企业组 ${team.team_name} 信息失败:`, error);
+      }
+    }
+    
+    // 团队组国别统计
+    const teamGroups = teams.filter(t => !t.is_enterprise);
+    let singleNationalityTeams = 0;
+    let multipleNationalityTeams = 0;
+    const singleCountryStats: { [key: string]: number } = {};
+    const multipleCountryCombinations: { [key: string]: number } = {};
+    const countryParticipation: { [key: string]: { single: number; multiple: number } } = {};
+    
+    console.log('👥 团队组数量:', teamGroups.length);
+    
+    let processedTeams = 0;
+    let unprocessedTeams = 0;
+    const unprocessedTeamDetails: string[] = [];
+    
+    for (const team of teamGroups) {
+      try {
+        console.log(`\n🔍 处理团队组 ${team.team_name} (ID: ${team.id}):`);
+        console.log(`   nationality_type: "${team.nationality_type}" (类型: ${typeof team.nationality_type})`);
+        console.log(`   selected_countries: "${team.selected_countries}" (类型: ${typeof team.selected_countries})`);
+        
+        // 团队组：优先从数据库字段直接读取，如果为空则尝试解密
+        let nationalityType = team.nationality_type;
+        let selectedCountries = team.selected_countries;
+        
+        // 如果数据库字段为空，尝试从加密信息中获取
+        if (!nationalityType || !selectedCountries) {
+          try {
+            const decryptedInfo = JSON.parse(decryptData(team.encrypted_info));
+            nationalityType = nationalityType || decryptedInfo?.basicInfo?.nationalityType;
+            selectedCountries = selectedCountries || decryptedInfo?.basicInfo?.selectedCountries;
+            console.log(`   🔓 从加密信息获取: nationalityType="${nationalityType}", selectedCountries=${JSON.stringify(selectedCountries)}`);
+          } catch (decryptError) {
+            console.warn(`   ❌ 解密团队组 ${team.team_name} 信息失败:`, decryptError);
+          }
+        }
+        
+        // 处理selected_countries字符串格式
+        let countriesArray = [];
+        if (typeof selectedCountries === 'string' && selectedCountries.trim()) {
+          try {
+            // 尝试解析JSON字符串
+            countriesArray = JSON.parse(selectedCountries);
+            console.log(`   📝 JSON解析成功: ${JSON.stringify(countriesArray)}`);
+          } catch {
+            // 如果不是JSON，按逗号分割
+            countriesArray = selectedCountries.split(',').map(c => c.trim()).filter(c => c);
+            console.log(`   📝 逗号分割: ${JSON.stringify(countriesArray)}`);
+          }
+        } else if (Array.isArray(selectedCountries)) {
+          countriesArray = selectedCountries;
+          console.log(`   📝 直接数组: ${JSON.stringify(countriesArray)}`);
+        } else {
+          console.log(`   ⚠️ selected_countries为空或无效: "${selectedCountries}"`);
+        }
+        
+        console.log(`   🎯 最终国家数组: ${JSON.stringify(countriesArray)}`);
+        
+        if (nationalityType === 'single') {
+          singleNationalityTeams++;
+          if (countriesArray.length === 1) {
+            // 有具体国家信息
+            const country = countriesArray[0];
+            singleCountryStats[country] = (singleCountryStats[country] || 0) + 1;
+            
+            // 更新国家参与度统计
+            if (!countryParticipation[country]) {
+              countryParticipation[country] = { single: 0, multiple: 0 };
+            }
+            countryParticipation[country].single++;
+            console.log(`   ✅ 单一国别团队: ${country}`);
+          } else {
+            // 没有具体国家信息，但类型是单一国别
+            singleCountryStats['未指定'] = (singleCountryStats['未指定'] || 0) + 1;
+            console.log(`   ✅ 单一国别团队: 未指定国家`);
+          }
+          processedTeams++;
+        } else if (nationalityType === 'multiple') {
+          multipleNationalityTeams++;
+          if (countriesArray.length > 1) {
+            // 有具体国家信息
+            const combination = countriesArray.sort().join(' + ');
+            multipleCountryCombinations[combination] = (multipleCountryCombinations[combination] || 0) + 1;
+            
+            // 更新国家参与度统计
+            for (const country of countriesArray) {
+              if (!countryParticipation[country]) {
+                countryParticipation[country] = { single: 0, multiple: 0 };
+              }
+              countryParticipation[country].multiple++;
+            }
+            console.log(`   ✅ 多国别团队: ${combination}`);
+          } else {
+            // 没有具体国家信息，但类型是多国别
+            multipleCountryCombinations['未指定'] = (multipleCountryCombinations['未指定'] || 0) + 1;
+            console.log(`   ✅ 多国别团队: 未指定国家`);
+          }
+          processedTeams++;
+        } else {
+          unprocessedTeams++;
+          const reason = `type="${nationalityType}", countries=${JSON.stringify(countriesArray)}`;
+          unprocessedTeamDetails.push(`${team.team_name}: ${reason}`);
+          console.log(`   ⚠️ 未匹配的团队: ${reason}`);
+        }
+      } catch (error) {
+        unprocessedTeams++;
+        unprocessedTeamDetails.push(`${team.team_name}: 处理异常 - ${error.message}`);
+        console.warn(`   ❌ 处理团队组 ${team.team_name} 信息失败:`, error);
+      }
+    }
+    
+    console.log(`\n📊 团队组处理结果:`);
+    console.log(`   总团队组数: ${teamGroups.length}`);
+    console.log(`   已处理: ${processedTeams} (单一: ${singleNationalityTeams}, 多国别: ${multipleNationalityTeams})`);
+    console.log(`   未处理: ${unprocessedTeams}`);
+    if (unprocessedTeamDetails.length > 0) {
+      console.log(`   未处理详情:`);
+      unprocessedTeamDetails.forEach(detail => console.log(`     - ${detail}`));
+    }
+    
+    // 计算涉及的国家总数
+    const allCountries = new Set([
+      ...Object.keys(enterpriseCountryStats),
+      ...Object.keys(singleCountryStats),
+      ...Object.keys(countryParticipation)
+    ]);
+    
+    console.log('📊 统计结果:');
+    console.log('- 企业组:', enterpriseTeams.length, '个');
+    console.log('- 团队组单一国别:', singleNationalityTeams, '个');
+    console.log('- 团队组多国别:', multipleNationalityTeams, '个');
+    console.log('- 涉及国家总数:', allCountries.size, '个');
+
+    return {
+      // 企业组统计
+      enterprise: {
+        total: enterpriseTeams.length,
+        by_country: enterpriseCountryStats
+      },
+      // 团队组统计
+      team_groups: {
+        total: teamGroups.length,
+        single_nationality: {
+          count: singleNationalityTeams,
+          by_country: singleCountryStats
+        },
+        multiple_nationality: {
+          count: multipleNationalityTeams,
+          combinations: multipleCountryCombinations
+        }
+      },
+      // 综合统计
+      summary: {
+        total_countries_involved: allCountries.size,
+        country_participation: countryParticipation
+      }
+    };
+  } catch (error) {
+    console.error('❌ 计算国别统计失败:', error);
+    return {};
   }
 }

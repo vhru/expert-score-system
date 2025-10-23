@@ -10,7 +10,7 @@ let content = fs.readFileSync(filePath, 'utf8');
 const translations = {
   // 项目信息部分
   '企业注册国家 * / Registration Country *': 't(\'enterpriseRegister.projectInfo.registrationCountry\') + " *"',
-  '项目简介 * / Project Brief * (500字以内)': 't(\'enterpriseRegister.projectInfo.projectBrief\') + " * (500字以内)"',
+  '项目简介 * / Project Brief * (2000字以内)': 't(\'enterpriseRegister.projectInfo.projectBrief\') + " * (2000字以内)"',
   '项目阶段 * / Project Stage *': 't(\'enterpriseRegister.projectInfo.projectStage\') + " *"',
   '研发阶段': 't(\'enterpriseRegister.projectInfo.stages.development\')',
   '实验室测试': 't(\'enterpriseRegister.projectInfo.stages.labTest\')',
@@ -28,7 +28,7 @@ const translations = {
   '注册资本 * / Registered Capital * (不超过450万美元)': 't(\'enterpriseRegister.enterpriseInfo.registeredCapital\') + " * (不超过450万美元)"',
   '电话 * / Phone *': 't(\'enterpriseRegister.enterpriseInfo.phone\') + " *"',
   '网站 / Website': 't(\'enterpriseRegister.enterpriseInfo.website\')',
-  '企业简介 / Enterprise Overview (500字以内)': 't(\'enterpriseRegister.enterpriseInfo.enterpriseOverview\') + " (500字以内)"',
+  '企业简介 / Enterprise Overview (2000字以内)': 't(\'enterpriseRegister.enterpriseInfo.enterpriseOverview\') + " (2000字以内)"',
   
   // 联系人信息部分
   '3. 项目联系人 / Project Contact Person': 't(\'enterpriseRegister.contactInfo.title\')',
