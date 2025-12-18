@@ -16,6 +16,7 @@ interface Assignment {
   comments?: string;
   original_name: string;
   expert_name: string;
+  team_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,12 +26,18 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [skippedTeams, setSkippedTeams] = useState<Array<{ team_id: number; team_name: string; reason: string }>>([]);
+  const [unassignedTeams, setUnassignedTeams] = useState<Array<{ team_id: number; team_name: string; reason: string }>>([]);
+  const [assignedTeamsCount, setAssignedTeamsCount] = useState<number>(0);
   const [showManualAssign, setShowManualAssign] = useState(false);
   const [availableTeams, setAvailableTeams] = useState<any[]>([]);
   const [availableExperts, setAvailableExperts] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedExperts, setSelectedExperts] = useState<number[]>([]);
   const [filteredExperts, setFilteredExperts] = useState<any[]>([]);
+  const [showTeamStatus, setShowTeamStatus] = useState(false);
+  const [teamStatusList, setTeamStatusList] = useState<any[]>([]);
+  const [loadingTeamStatus, setLoadingTeamStatus] = useState(false);
 
   const fetchAssignments = async () => {
     try {
@@ -53,6 +60,8 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
   const handleAssignReviews = async () => {
     setLoading(true);
     setMessage('');
+    setSkippedTeams([]);
+    setUnassignedTeams([]);
 
     try {
       const response = await fetch('/api/reviews/assign', {
@@ -62,20 +71,55 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
         },
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
+      if (!data) {
+        throw new Error('服务器返回数据为空');
+      }
+
       if (data.success) {
-        setMessage(data.message);
+        setMessage(data.message || '分配成功');
         setMessageType('success');
+        
+        const skipped = data.skippedTeams || [];
+        const unassigned = data.unassignedTeams || [];
+        
+        if (Array.isArray(skipped) && skipped.length > 0) {
+          setSkippedTeams(skipped);
+        } else {
+          setSkippedTeams([]);
+        }
+        
+        if (Array.isArray(unassigned) && unassigned.length > 0) {
+          setUnassignedTeams(unassigned);
+        } else {
+          setUnassignedTeams([]);
+        }
+        
+        // 更新已分配项目数
+        if (data.statistics) {
+          setAssignedTeamsCount(data.statistics.assignedTeams || 0);
+        }
+        
         fetchAssignments();
         onUpdate();
       } else {
-        setMessage(data.error || '分配失败');
+        setMessage(data.error || data.message || '分配失败');
         setMessageType('error');
+        setSkippedTeams([]);
+        setUnassignedTeams([]);
       }
     } catch (error) {
+      console.error('分配失败:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
       setMessage('网络错误，请重试');
       setMessageType('error');
+      setSkippedTeams([]);
+      setUnassignedTeams([]);
     } finally {
       setLoading(false);
     }
@@ -107,6 +151,32 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
     }
   };
 
+  const fetchTeamAssignmentStatusForDisplay = async () => {
+    setLoadingTeamStatus(true);
+    try {
+      const response = await fetch('/api/reviews/team-assignment-status', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTeamStatusList(data.teams || []);
+        setAssignedTeamsCount(data.assigned_teams || 0);
+        setShowTeamStatus(true);
+      } else {
+        setMessage('获取团队分配状态失败: ' + (data.error || '未知错误'));
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Failed to fetch team assignment status:', error);
+      setMessage('获取团队分配状态失败');
+      setMessageType('error');
+    } finally {
+      setLoadingTeamStatus(false);
+    }
+  };
+
   // 根据选择的团队过滤专家
   const filterExpertsByTeam = (teamId: string) => {
     if (!teamId) {
@@ -120,9 +190,8 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
       return;
     }
     
-    const teamType = team.is_enterprise ? 'enterprise' : 'team';
-    const matchingExperts = availableExperts.filter(expert => expert.expert_type === teamType);
-    setFilteredExperts(matchingExperts);
+    // 不再根据团队类型筛选专家，统一显示所有专家
+    setFilteredExperts(availableExperts);
   };
 
   // 当选择的团队改变时，过滤专家
@@ -131,9 +200,28 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
     setSelectedExperts([]); // 清空已选择的专家
   }, [selectedTeam, availableTeams, availableExperts]);
 
+  // 获取已分配项目数（不显示详细列表，仅用于统计）
+  const fetchTeamAssignmentStatus = async () => {
+    try {
+      const response = await fetch('/api/reviews/team-assignment-status', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success && data.assigned_teams !== undefined) {
+        setAssignedTeamsCount(data.assigned_teams);
+      }
+    } catch (error) {
+      console.error('Failed to fetch team assignment status:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAssignments();
     fetchAvailableData();
+    // 初始化时获取已分配项目数
+    fetchTeamAssignmentStatus();
   }, []);
 
   const handleManualAssign = async () => {
@@ -234,6 +322,13 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
           >
             手动分配
           </button>
+          <button
+            onClick={fetchTeamAssignmentStatusForDisplay}
+            disabled={loadingTeamStatus}
+            className="btn-secondary"
+          >
+            {loadingTeamStatus ? '加载中...' : '查看所有团队状态'}
+          </button>
         </div>
       </div>
 
@@ -243,8 +338,161 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
         </div>
       )}
 
+      {/* 显示被跳过的团队详情 */}
+      {skippedTeams && skippedTeams.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">
+            被跳过的项目 ({skippedTeams.length} 个)
+          </h3>
+          <div className="space-y-1">
+            {skippedTeams.map((team, index) => (
+              <div key={`${team.team_id}-${index}`} className="text-sm text-yellow-700">
+                <span className="font-medium">ID: {team.team_id}</span> - {team.reason}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 显示未分配的团队详情 */}
+      {unassignedTeams && unassignedTeams.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-orange-800 mb-2">
+            未分配的项目 ({unassignedTeams.length} 个)
+          </h3>
+          <div className="space-y-1">
+            {unassignedTeams.map((team, index) => (
+              <div key={`${team.team_id}-${index}`} className="text-sm text-orange-700">
+                <span className="font-medium">ID: {team.team_id}</span> - {team.reason}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 显示所有团队分配状态 */}
+      {showTeamStatus && (
+        <div className="bg-white border border-gray-300 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              所有团队分配状态
+            </h3>
+            <button
+              onClick={() => setShowTeamStatus(false)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              关闭
+            </button>
+          </div>
+          
+          {teamStatusList.length > 0 ? (
+            <>
+              <div className="mb-4 grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-blue-600">{teamStatusList.length}</div>
+                  <div className="text-sm text-gray-600">总团队数</div>
+                </div>
+                <div className="bg-green-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-green-600">
+                    {teamStatusList.filter(t => t.is_assigned).length}
+                  </div>
+                  <div className="text-sm text-gray-600">已分配</div>
+                </div>
+                <div className="bg-red-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-red-600">
+                    {teamStatusList.filter(t => !t.is_assigned).length}
+                  </div>
+                  <div className="text-sm text-gray-600">未分配</div>
+                </div>
+              </div>
+
+              {/* 所有团队ID列表 */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">所有active且通过审核的团队ID列表：</h4>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <code className="text-xs text-gray-800">
+                    [{teamStatusList.map(t => t.team_id).join(', ')}]
+                  </code>
+                </div>
+              </div>
+
+              {/* 未分配团队详情 */}
+              {teamStatusList.filter(t => !t.is_assigned).length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-red-700 mb-2">
+                    未分配团队详情 ({teamStatusList.filter(t => !t.is_assigned).length} 个)：
+                  </h4>
+                  <div className="bg-red-50 border border-red-200 rounded p-3 max-h-96 overflow-auto">
+                    <table className="min-w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-red-200">
+                          <th className="text-left p-2">ID</th>
+                          <th className="text-left p-2">团队名称</th>
+                          <th className="text-left p-2">分配记录数</th>
+                          <th className="text-left p-2">状态</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {teamStatusList.filter(t => !t.is_assigned).map((team) => (
+                          <tr key={team.team_id} className="border-b border-red-100">
+                            <td className="p-2 font-mono">{team.team_id}</td>
+                            <td className="p-2">{team.team_name}</td>
+                            <td className="p-2">
+                              {team.assignment_count} (by_name: {team.assignment_count_by_name}, by_id: {team.assignment_count_by_id})
+                            </td>
+                            <td className="p-2 text-red-600">{team.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 完整列表（可折叠） */}
+              <details className="mt-4">
+                <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                  查看完整列表 ({teamStatusList.length} 个团队)
+                </summary>
+                <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-3 max-h-96 overflow-auto">
+                  <table className="min-w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-300">
+                        <th className="text-left p-2">ID</th>
+                        <th className="text-left p-2">团队名称</th>
+                        <th className="text-left p-2">邮箱</th>
+                        <th className="text-left p-2">分配记录数</th>
+                        <th className="text-left p-2">状态</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamStatusList.map((team) => (
+                        <tr 
+                          key={team.team_id} 
+                          className={`border-b border-gray-200 ${!team.is_assigned ? 'bg-red-50' : ''}`}
+                        >
+                          <td className="p-2 font-mono">{team.team_id}</td>
+                          <td className="p-2">{team.team_name}</td>
+                          <td className="p-2 text-gray-600">{team.contact_email}</td>
+                          <td className="p-2">{team.assignment_count}</td>
+                          <td className={`p-2 ${team.is_assigned ? 'text-green-600' : 'text-red-600'}`}>
+                            {team.status}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </>
+          ) : (
+            <div className="text-gray-500 text-center py-4">暂无数据</div>
+          )}
+        </div>
+      )}
+
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-2xl font-bold text-gray-900">{totalCount}</div>
           <div className="text-sm text-gray-600">总分配任务</div>
@@ -256,6 +504,10 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-2xl font-bold text-yellow-600">{totalCount - completedCount}</div>
           <div className="text-sm text-gray-600">待完成</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-blue-600">{assignedTeamsCount}</div>
+          <div className="text-sm text-gray-600">已分配项目数</div>
         </div>
       </div>
 

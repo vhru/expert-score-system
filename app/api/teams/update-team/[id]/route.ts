@@ -99,11 +99,23 @@ export async function PUT(
     console.log('   选择的国家变化:', existingInfo.basicInfo?.selectedCountries, '->', basicInfo.selectedCountries);
     console.log('   加密后的encrypted_info长度:', encryptedInfo.length);
 
+    // 根据国籍类型决定保存的国别信息（与注册逻辑保持一致）
+    let countriesToSave;
+    if (basicInfo.nationalityType === 'single') {
+      // 单一国别：使用 coreMembersNationality 字段
+      countriesToSave = basicInfo.coreMembersNationality ? [basicInfo.coreMembersNationality] : [];
+    } else {
+      // 多国别：使用 selectedCountries 数组
+      countriesToSave = basicInfo.selectedCountries || [];
+    }
+    
+    console.log('   最终保存的国家数据:', countriesToSave);
+
     // 更新团队基本信息（更新team_name、encrypted_info和selected_countries）
     const updateResult = await dbOperations.teams.update(teamId, {
       team_name: basicInfo.projectName, // 项目名称作为团队名称
       encrypted_info: encryptedInfo,
-      selected_countries: JSON.stringify(basicInfo.selectedCountries || []), // 单独更新selected_countries字段
+      selected_countries: JSON.stringify(countriesToSave), // 使用处理后的国家数据
       nationality_type: basicInfo.nationalityType || 'single' // 同时更新国籍类型
     });
     

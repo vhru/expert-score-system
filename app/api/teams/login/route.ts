@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         teamName: team.team_name, 
         role: 'team' 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET || 'expert_review_jwt_secret_2024_production',
       { expiresIn: '7d' }
     );
 

@@ -24,7 +24,6 @@ export default function FileUpload({ token, onUploadSuccess }: FileUploadProps) 
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'image/jpeg',
         'image/png',
-        'image/gif',
         'text/plain'
       ];
 
@@ -114,7 +113,7 @@ export default function FileUpload({ token, onUploadSuccess }: FileUploadProps) 
             type="file"
             onChange={handleFileChange}
             className="form-input"
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
             required
           />
           {file && (

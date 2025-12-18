@@ -76,7 +76,7 @@ export async function initDatabase() {
     `, [process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword]);
 
     connection.release();
-    console.log('Database initialized successfully');
+    // Database initialized successfully
   } catch (error) {
     console.error('Database initialization failed:', error);
     throw error;

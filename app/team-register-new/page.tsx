@@ -49,7 +49,8 @@ export default function TeamRegisterPage() {
     contactPersonName: '',
     contactPersonPosition: '',
     contactPersonPhone: '',
-    contactPersonEmail: ''
+    contactPersonEmail: '',
+    contactPersonUnit: ''
   });
 
   // 核心成员
@@ -146,7 +147,8 @@ export default function TeamRegisterPage() {
             contactPersonName: decryptedInfo.contactInfo?.contactPersonName || '',
             contactPersonPosition: decryptedInfo.contactInfo?.contactPersonPosition || '',
             contactPersonPhone: decryptedInfo.contactInfo?.contactPersonPhone || '',
-            contactPersonEmail: decryptedInfo.contactInfo?.contactPersonEmail || ''
+            contactPersonEmail: decryptedInfo.contactInfo?.contactPersonEmail || '',
+            contactPersonUnit: decryptedInfo.contactInfo?.contactPersonUnit || ''
           });
           
           // 设置核心成员信息 - 优先使用数据库数据
@@ -380,10 +382,13 @@ export default function TeamRegisterPage() {
               </div>
             )}
 
-            {/* 隐私提示 */}
+            {/* 隐私提示和必填说明 */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-amber-800 mb-2">
                 {t('common.privacyNotice')}
+              </p>
+              <p className="text-sm text-amber-800">
+                {t('common.required') === '必填' ? '标有 * 的字段为必填项' : 'Fields marked with * are required'}
               </p>
             </div>
 
@@ -534,11 +539,11 @@ export default function TeamRegisterPage() {
                   onChange={handleBasicInfoChange}
                   required
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
-                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/2000</p>
               </div>
 
 
@@ -649,6 +654,20 @@ export default function TeamRegisterPage() {
                     </p>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('teamRegister.contactInfo.contactPersonUnit') + " *"}
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPersonUnit"
+                    value={contactInfo.contactPersonUnit}
+                    onChange={handleContactInfoChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -670,7 +689,9 @@ export default function TeamRegisterPage() {
               {coreMembers.map((member, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-gray-900">{t('teamRegister.coreMembers.member')} {index + 1}</h3>
+                    <h3 className="font-medium text-gray-900">
+                      {index === 0 ? t('teamRegister.coreMembers.projectLeader') : `${t('teamRegister.coreMembers.member')} ${index + 1}`}
+                    </h3>
                     {coreMembers.length > 2 && (
                       <button
                         type="button"
@@ -695,7 +716,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.nationality')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.nationality')} *</label>
                       <input
                         type="text"
                         value={member.nationality}
@@ -705,7 +726,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.gender')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.gender')} *</label>
                       <select
                         value={member.gender}
                         onChange={(e) => handleCoreMemberChange(index, 'gender', e.target.value)}
@@ -718,7 +739,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.birthDate')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.birthDate')} *</label>
                       <input
                         type="date"
                         value={member.birthDate}
@@ -781,7 +802,7 @@ export default function TeamRegisterPage() {
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.phone')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.phone')} *</label>
                       <input
                         type="tel"
                         value={member.phone}
@@ -812,7 +833,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.highestDegree')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.highestDegree')} *</label>
                       <select
                         value={member.highestDegree}
                         onChange={(e) => handleCoreMemberChange(index, 'highestDegree', e.target.value)}
@@ -827,7 +848,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.organization')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.organization')} *</label>
                       <input
                         type="text"
                         value={member.organization}
@@ -837,7 +858,7 @@ export default function TeamRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.position')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('teamRegister.coreMembers.position')} *</label>
                       <input
                         type="text"
                         value={member.position}

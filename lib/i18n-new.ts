@@ -36,6 +36,8 @@ export interface Translations {
     admin: string;
     required: string;
     optional: string;
+    privacyNotice: string;
+    helpCenter: string;
   };
   
   // 门户页面
@@ -105,6 +107,7 @@ export interface Translations {
       enterpriseName: string;
       unifiedSocialCreditCode: string;
       registrationYear: string;
+      registrationTime: string;
       legalRepresentative: string;
       headquartersLocation: string;
       registeredCapital: string;
@@ -118,12 +121,15 @@ export interface Translations {
       contactPersonPosition: string;
       contactPersonPhone: string;
       contactPersonEmail: string;
+      contactPersonUnit: string;
     };
     coreMembers: {
       title: string;
       addMember: string;
       remove: string;
       member: string;
+      projectLeader: string;
+      projectContact: string;
       name: string;
       nationality: string;
       gender: string;
@@ -207,12 +213,15 @@ export interface Translations {
       contactPersonPosition: string;
       contactPersonPhone: string;
       contactPersonEmail: string;
+      contactPersonUnit: string;
     };
     coreMembers: {
       title: string;
       addMember: string;
       remove: string;
       member: string;
+      projectLeader: string;
+      projectContact: string;
       name: string;
       nationality: string;
       gender: string;
@@ -347,6 +356,8 @@ const zhTranslations: Translations = {
     admin: '管理员',
     required: '必填',
     optional: '选填',
+    privacyNotice: '⚠️ 重要提示：所有上传的信息仅用于本次STIC大赛评审，我们将严格保护您的隐私信息，不会用于其他用途。',
+    helpCenter: '帮助中心',
   },
   portal: {
     title: '澜湄国家科技创新大赛',
@@ -383,7 +394,7 @@ const zhTranslations: Translations = {
       title: '1. 参赛项目信息',
       projectName: '项目名称',
       registrationCountry: '企业注册国家',
-      projectBrief: '项目简介',
+      projectBrief: '项目简介（2000字以内， 中英双语）',
       projectStage: '项目阶段',
       stages: {
         development: '研发阶段',
@@ -412,12 +423,13 @@ const zhTranslations: Translations = {
       enterpriseName: '企业名称',
       unifiedSocialCreditCode: '统一社会信用代码',
       registrationYear: '注册年份',
+      registrationTime: '注册时间',
       legalRepresentative: '企业法定代表人',
       headquartersLocation: '总部所在地',
       registeredCapital: '注册资本',
       phone: '电话',
       website: '网站',
-      enterpriseOverview: '企业简介',
+      enterpriseOverview: '企业简介（2000字以内， 中英双语）',
     },
     contactInfo: {
       title: '3. 项目联系人',
@@ -425,12 +437,15 @@ const zhTranslations: Translations = {
       contactPersonPosition: '职务',
       contactPersonPhone: '电话',
       contactPersonEmail: '邮箱（此为登录账号）',
+      contactPersonUnit: '单位',
     },
     coreMembers: {
       title: '4. 核心成员信息',
       addMember: '添加成员',
       remove: '删除',
       member: '成员',
+      projectLeader: '项目负责人',
+      projectContact: '项目联系人',
       name: '姓名',
       nationality: '国籍',
       gender: '性别',
@@ -460,10 +475,10 @@ const zhTranslations: Translations = {
     documents: {
       title: '5. 需附材料清单',
       businessLicense: '营业执照扫描件',
-      commitmentLetter: '参赛承诺书',
+      commitmentLetter: '参赛承诺书（法定代表人签字按手印，加盖企业公章）',
       businessPlanChinese: '商业计划书（中文版）',
       businessPlanEnglish: '商业计划书（英文版）',
-      presentation: '演示文稿',
+      presentation: '演示文稿（中英双语两版，PPT格式）',
       supplementaryMaterials: '其他补充材料',
     },
     password: {
@@ -483,7 +498,7 @@ const zhTranslations: Translations = {
       title: '1. 参赛项目信息',
       projectName: '项目名称',
       coreMembersNationality: '核心成员国籍',
-      projectBrief: '项目简介',
+      projectBrief: '项目简介（2000字以内， 中英双语）',
       projectStage: '项目阶段',
       stages: {
         development: '研发阶段',
@@ -512,12 +527,15 @@ const zhTranslations: Translations = {
       contactPersonPosition: '职务',
       contactPersonPhone: '电话',
       contactPersonEmail: '邮箱（此为登录账号）',
+      contactPersonUnit: '单位',
     },
     coreMembers: {
       title: '3. 核心成员信息',
       addMember: '添加成员',
       remove: '删除',
       member: '成员',
+      projectLeader: '项目负责人',
+      projectContact: '项目联系人',
       name: '姓名',
       nationality: '国籍',
       gender: '性别',
@@ -527,7 +545,7 @@ const zhTranslations: Translations = {
       idPhoto: '证件照',
       phone: '电话',
       email: '电子邮箱',
-      university: '毕业院校',
+      university: '毕业院校/目前就读院校',
       highestDegree: '最高学历',
       organization: '所在单位',
       position: '职务/职称',
@@ -546,15 +564,15 @@ const zhTranslations: Translations = {
     },
     documents: {
       title: '4. 需附材料清单',
-      commitmentLetter: '参赛承诺书',
+      commitmentLetter: '参赛承诺书（签字按手印）',
       technicalInfoChinese: '项目技术可行性分析（中文版）',
       technicalInfoEnglish: '项目技术可行性分析（英文版）',
-      presentation: '演示文稿',
+      presentation: '演示文稿（中英双语两版，PPT格式）',
       supplementaryMaterials: '其他补充材料',
     },
     images: {
       title: '团队图片',
-      description: '可上传最多5张团队相关图片（PNG/JPG/GIF格式，每张不超过10MB）',
+      description: '可上传最多5张团队相关图片（PNG/JPG格式，每张不超过10MB）',
       image: '图片',
     },
     password: {
@@ -646,6 +664,8 @@ const enTranslations: Translations = {
     admin: 'Admin',
     required: 'Required',
     optional: 'Optional',
+    privacyNotice: '⚠️ Important Notice: All uploaded information is used solely for the STIC competition review. We strictly protect your privacy and will not use your information for any other purposes.',
+    helpCenter: 'Help Center',
   },
   portal: {
     title: 'Lancang-Mekong Countries Science and Technology Innovation Competition',
@@ -711,6 +731,7 @@ const enTranslations: Translations = {
       enterpriseName: 'Enterprise Name',
       unifiedSocialCreditCode: 'Unified Social Credit Code',
       registrationYear: 'Registration Year (2019 or later)',
+      registrationTime: 'Registration Time',
       legalRepresentative: 'Legal Representative',
       headquartersLocation: 'Headquarters Location',
       registeredCapital: 'Registered Capital (no more than 4.5 million USD)',
@@ -724,12 +745,15 @@ const enTranslations: Translations = {
       contactPersonPosition: 'Position',
       contactPersonPhone: 'Phone',
       contactPersonEmail: 'Email (This will be your login account)',
+      contactPersonUnit: 'Unit/Organization',
     },
     coreMembers: {
       title: '4. Core Team Members (Minimum 3 and no more than 6 members)',
       addMember: 'Add Member',
       remove: 'Remove',
       member: 'Member',
+      projectLeader: 'Project Leader',
+      projectContact: 'Project Contact',
       name: 'Name',
       nationality: 'Nationality',
       gender: 'Gender',
@@ -739,7 +763,7 @@ const enTranslations: Translations = {
       idPhoto: 'ID Photo',
       phone: 'Phone',
       email: 'Email',
-      university: 'University',
+      university: 'University/Current Institution',
       highestDegree: 'Highest Degree',
       organization: 'Organization',
       position: 'Position',
@@ -759,10 +783,10 @@ const enTranslations: Translations = {
     documents: {
       title: '5. Required Materials',
       businessLicense: 'Business License',
-      commitmentLetter: 'Commitment Letter',
+      commitmentLetter: 'Commitment Letter (Signed by Legal Representative with Fingerprint and Company Seal)',
       businessPlanChinese: 'Business Plan (Chinese Version)',
       businessPlanEnglish: 'Business Plan (English Version)',
-      presentation: 'Presentation',
+      presentation: 'Presentation (Chinese and English Bilingual, PPT Format)',
       supplementaryMaterials: 'Supplementary Materials',
     },
     password: {
@@ -811,12 +835,15 @@ const enTranslations: Translations = {
       contactPersonPosition: 'Position',
       contactPersonPhone: 'Phone',
       contactPersonEmail: 'Email (This will be your login account)',
+      contactPersonUnit: 'Unit/Organization',
     },
     coreMembers: {
       title: '3. Core Team Members (Minimum 3 and no more than 6 members)',
       addMember: 'Add Member',
       remove: 'Remove',
       member: 'Member',
+      projectLeader: 'Project Leader',
+      projectContact: 'Project Contact',
       name: 'Name',
       nationality: 'Nationality',
       gender: 'Gender',
@@ -826,7 +853,7 @@ const enTranslations: Translations = {
       idPhoto: 'ID Photo',
       phone: 'Phone',
       email: 'Email',
-      university: 'University',
+      university: 'University/Current Institution',
       highestDegree: 'Highest Degree',
       organization: 'Organization',
       position: 'Position',
@@ -845,15 +872,15 @@ const enTranslations: Translations = {
     },
     documents: {
       title: '4. Required Materials',
-      commitmentLetter: 'Commitment Letter',
+      commitmentLetter: 'Commitment Letter (Signed with Fingerprint)',
       technicalInfoChinese: 'Technical Feasibility Analysis (Chinese Version)',
       technicalInfoEnglish: 'Technical Feasibility Analysis (English Version)',
-      presentation: 'Presentation',
+      presentation: 'Presentation (Chinese and English Bilingual, PPT Format)',
       supplementaryMaterials: 'Supplementary Materials',
     },
     images: {
       title: 'Team Images',
-      description: 'Upload up to 5 team-related images (PNG/JPG/GIF format, max 10MB each)',
+      description: 'Upload up to 5 team-related images (PNG/JPG format, max 10MB each)',
       image: 'Image',
     },
     password: {

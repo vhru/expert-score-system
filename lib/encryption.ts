@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 
-const SECRET_KEY = process.env.AES_SECRET_KEY || 'default_secret_key_32_chars_long';
+const SECRET_KEY = 'your_aes_secret_key_32_chars_long'; // 硬编码密钥以解决解密问题
 
 export function encryptData(data: string): string {
   try {

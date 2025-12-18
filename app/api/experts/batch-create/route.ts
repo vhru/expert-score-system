@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
 
     const { experts } = await request.json();
 
+    // 批量创建逻辑
     if (!experts || !Array.isArray(experts)) {
       return NextResponse.json(
         { error: '专家数据格式错误' },
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
         // 加密个人信息
         const encryptedInfo = personalInfo ? encryptData(personalInfo) : null;
 
-        const success = await createExpert(username, password, encryptedInfo);
+        // 默认expert_type为'team'
+        const success = await createExpert(username, password, encryptedInfo, 'team');
         
         if (success) {
           results.push({ username, status: 'success' });

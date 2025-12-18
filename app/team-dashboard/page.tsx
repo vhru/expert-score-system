@@ -29,6 +29,9 @@ export default function TeamDashboard() {
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
   const [auditStatus, setAuditStatus] = useState<string>('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
 
   // 翻译文本
   const t = {
@@ -65,7 +68,19 @@ export default function TeamDashboard() {
       pendingExpert: '待分配专家',
       auditPassed: '审核通过',
       auditPassedMessage: '您的提交已通过审核，无法再进行修改。',
-      switchLanguage: 'English'
+      switchLanguage: 'English',
+      uploadDocument: '上传文档',
+      uploadNewDocument: '上传新文档',
+      documentType: '文档类型',
+      selectFile: '选择文件',
+      uploadSuccess: '文档上传成功！',
+      uploadError: '上传失败',
+      uploadButton: '上传文件',
+      uploading: '上传中...',
+      reset: '重置',
+      selectDocumentType: '请选择文档类型',
+      fileSizeLimit: '只支持PDF格式，文件大小不超过10MB',
+      selectedFile: '已选择文件'
     },
     en: {
       title: 'Team Dashboard',
@@ -100,7 +115,19 @@ export default function TeamDashboard() {
       pendingExpert: 'Pending Expert Assignment',
       auditPassed: 'Audit Passed',
       auditPassedMessage: 'Your submission has been approved. No further changes are allowed.',
-      switchLanguage: '中文'
+      switchLanguage: '中文',
+      uploadDocument: 'Upload Document',
+      uploadNewDocument: 'Upload New Document',
+      documentType: 'Document Type',
+      selectFile: 'Select File',
+      uploadSuccess: 'Document uploaded successfully!',
+      uploadError: 'Upload failed',
+      uploadButton: 'Upload File',
+      uploading: 'Uploading...',
+      reset: 'Reset',
+      selectDocumentType: 'Please select document type',
+      fileSizeLimit: 'PDF format only, file size not exceeding 10MB',
+      selectedFile: 'Selected file'
     }
   };
 
@@ -277,6 +304,51 @@ export default function TeamDashboard() {
     router.push(`/team-edit-document/${submission.id}`);
   };
 
+  const handleUploadDocument = () => {
+    setShowUploadModal(true);
+    setUploadMessage('');
+  };
+
+  const handleFileUpload = async (file: File, documentType: string) => {
+    setUploading(true);
+    setUploadMessage('');
+
+    try {
+      const token = localStorage.getItem('teamToken');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentType', documentType);
+
+      // 使用现有的更新API，传入一个不存在的ID来创建新文档
+      const response = await fetch('/api/teams/update-document/0', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setUploadMessage(t[language].uploadSuccess);
+        // 刷新提交记录
+        await fetchSubmissions(token!);
+        // 关闭上传模态框
+        setTimeout(() => {
+          setShowUploadModal(false);
+        }, 1500);
+      } else {
+        setUploadMessage(`${t[language].uploadError}: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadMessage(t[language].uploadError);
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -324,15 +396,7 @@ export default function TeamDashboard() {
                 >
                   {t[language].switchLanguage}
                 </button>
-                {/* 审核通过后隐藏提交新作品链接 */}
-                {!isAuditPassed && (
-                  <a 
-                    href="/team-submit" 
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    {t[language].submitNew}
-                  </a>
-                )}
+                {/* 提交新作品功能已屏蔽 */}
                 <button
                   onClick={handleLogout}
                   className="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -384,6 +448,18 @@ export default function TeamDashboard() {
           <div className="bg-white shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-medium text-gray-900">{t[language].submissions}</h2>
+              {/* 审核通过后隐藏上传按钮 */}
+              {!isAuditPassed && (
+                <button
+                  onClick={handleUploadDocument}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  {t[language].uploadDocument}
+                </button>
+              )}
             </div>
 
             {submissions.length === 0 ? (
@@ -509,6 +585,164 @@ export default function TeamDashboard() {
 
         </div>
       </main>
+
+      {/* 文件上传模态框 */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {t[language].uploadNewDocument}
+                </h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">关闭</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <FileUploadComponent
+                onFileUpload={handleFileUpload}
+                uploading={uploading}
+                message={uploadMessage}
+                language={language}
+                t={t}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 文件上传组件
+interface FileUploadComponentProps {
+  onFileUpload: (file: File, documentType: string) => void;
+  uploading: boolean;
+  message: string;
+  language: 'zh' | 'en';
+  t: any;
+}
+
+function FileUploadComponent({ onFileUpload, uploading, message, language, t }: FileUploadComponentProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState('');
+
+  const documentTypes = [
+    { value: 'businessLicense', label: language === 'zh' ? '营业执照' : 'Business License' },
+    { value: 'businessPlan', label: language === 'zh' ? '商业计划书' : 'Business Plan' },
+    { value: 'commitmentLetter', label: language === 'zh' ? '承诺书' : 'Commitment Letter' },
+    { value: 'presentation', label: language === 'zh' ? '路演PPT' : 'Presentation' },
+    { value: 'technicalInfo', label: language === 'zh' ? '技术资料' : 'Technical Info' },
+    { value: 'supplementaryMaterials', label: language === 'zh' ? '补充材料' : 'Supplementary Materials' },
+  ];
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert(language === 'zh' ? '只支持PDF格式文件' : 'Only PDF files are supported');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert(language === 'zh' ? '文件大小不能超过10MB' : 'File size cannot exceed 10MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!selectedFile || !documentType) {
+      alert(language === 'zh' ? '请选择文件和文档类型' : 'Please select file and document type');
+      return;
+    }
+    onFileUpload(selectedFile, documentType);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t[language].documentType} *
+        </label>
+        <select
+          value={documentType}
+          onChange={(e) => setDocumentType(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={uploading}
+        >
+          <option value="">{t[language].selectDocumentType}</option>
+          {documentTypes.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {t[language].selectFile} *
+        </label>
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          disabled={uploading}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          {t[language].fileSizeLimit}
+        </p>
+      </div>
+
+      {selectedFile && (
+        <div className="bg-gray-50 p-3 rounded-md">
+          <p className="text-sm text-gray-700">
+            <strong>{t[language].selectedFile}:</strong> {selectedFile.name}
+          </p>
+          <p className="text-xs text-gray-500">
+            {t[language].fileSize}: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+          </p>
+        </div>
+      )}
+
+      {message && (
+        <div className={`p-3 rounded-md text-sm ${
+          message.includes('成功') || message.includes('successfully')
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-red-100 text-red-700'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={() => {
+            setSelectedFile(null);
+            setDocumentType('');
+          }}
+          disabled={uploading}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+        >
+          {t[language].reset}
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={uploading || !selectedFile || !documentType}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          {uploading ? t[language].uploading : t[language].uploadButton}
+        </button>
+      </div>
     </div>
   );
 }

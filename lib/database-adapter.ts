@@ -135,6 +135,64 @@ const mysqlOperations = {
     }
   },
   
+  // 导出任务操作
+  exportTasks: {
+    async createExportTask(taskType: string, createdBy: string) {
+      const pool = getMysqlPool();
+      const [result] = await pool.execute(
+        'INSERT INTO export_tasks (task_type, created_by, status) VALUES (?, ?, ?)',
+        [taskType, createdBy, 'pending']
+      ) as any;
+      return result.insertId;
+    },
+    
+    async findExportTaskById(taskId: number) {
+      const pool = getMysqlPool();
+      const [rows] = await pool.execute('SELECT * FROM export_tasks WHERE id = ?', [taskId]);
+      return Array.isArray(rows) ? rows[0] : null;
+    },
+    
+    async updateExportTask(taskId: number, updateData: { status?: string, file_path?: string, file_name?: string, error_message?: string, progress_message?: string }) {
+      const pool = getMysqlPool();
+      const fields = [];
+      const values = [];
+      
+      if (updateData.status) {
+        fields.push('status = ?');
+        values.push(updateData.status);
+      }
+      if (updateData.file_path) {
+        fields.push('file_path = ?');
+        values.push(updateData.file_path);
+      }
+      if (updateData.file_name) {
+        fields.push('file_name = ?');
+        values.push(updateData.file_name);
+      }
+      if (updateData.error_message !== undefined) {
+        fields.push('error_message = ?');
+        values.push(updateData.error_message);
+      }
+      if (updateData.progress_message !== undefined) {
+        fields.push('progress_message = ?');
+        values.push(updateData.progress_message);
+      }
+      if (updateData.status === 'completed' || updateData.status === 'failed') {
+        fields.push('completed_at = CURRENT_TIMESTAMP');
+      }
+      
+      if (fields.length === 0) {
+        return;
+      }
+      
+      values.push(taskId);
+      await pool.execute(
+        `UPDATE export_tasks SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        values
+      );
+    }
+  },
+  
   // 团队操作
   teams: {
     async create(teamName: string, password: string, contactEmail: string, encryptedInfo?: string, isEnterprise?: boolean, enterpriseName?: string, enterpriseLicense?: string, projectStage?: string, projectStageOthers?: string, nationalityType?: string, selectedCountries?: string, nationalityOthers?: string) {
@@ -277,7 +335,13 @@ const mysqlOperations = {
     async findByExpert(expertId: number) {
       const pool = getMysqlPool();
       const [rows] = await pool.execute(
-        'SELECT ra.*, f.original_name, f.file_path, f.team_name, f.mime_type FROM review_assignments ra JOIN files f ON ra.file_id = f.id WHERE ra.expert_id = ?',
+        `SELECT ra.*, f.original_name, f.file_path, f.mime_type, 
+         COALESCE(t.team_name, f.team_name) as team_name
+         FROM review_assignments ra 
+         JOIN files f ON ra.file_id = f.id 
+         LEFT JOIN team_documents td ON td.document_path = f.file_path
+         LEFT JOIN teams t ON t.id = td.team_id
+         WHERE ra.expert_id = ?`,
         [expertId]
       );
       return rows;
@@ -295,7 +359,13 @@ const mysqlOperations = {
     async findByExpertAndTeam(expertId: number, teamName: string) {
       const pool = getMysqlPool();
       const [rows] = await pool.execute(
-        'SELECT ra.*, f.original_name, f.file_path, f.team_name, f.mime_type FROM review_assignments ra JOIN files f ON ra.file_id = f.id WHERE ra.expert_id = ? AND f.team_name = ?',
+        `SELECT ra.*, f.original_name, f.file_path, f.mime_type,
+         COALESCE(t.team_name, f.team_name) as team_name
+         FROM review_assignments ra 
+         JOIN files f ON ra.file_id = f.id 
+         LEFT JOIN team_documents td ON td.document_path = f.file_path
+         LEFT JOIN teams t ON t.id = td.team_id
+         WHERE ra.expert_id = ? AND COALESCE(t.team_name, f.team_name) = ?`,
         [expertId, teamName]
       );
       return rows;
@@ -353,11 +423,13 @@ const mysqlOperations = {
           ra.created_at,
           ra.updated_at,
           f.original_name,
-          f.team_name,
+          COALESCE(t.team_name, f.team_name) as team_name,
           u.username as expert_name
         FROM review_assignments ra
         JOIN files f ON ra.file_id = f.id
         JOIN users u ON ra.expert_id = u.id
+        LEFT JOIN team_documents td ON td.document_path = f.file_path
+        LEFT JOIN teams t ON t.id = td.team_id
         ORDER BY ra.created_at DESC
       `);
       return rows;
@@ -932,6 +1004,33 @@ export const dbOperations = {
     }
   },
   
+  exportTasks: {
+    async create(taskType: string, createdBy: string) {
+      if (useMySQL()) {
+        return await mysqlOperations.exportTasks.createExportTask(taskType, createdBy);
+      } else {
+        // SQLite暂时不支持，如果需要可以后续添加
+        throw new Error('Export tasks are only supported in MySQL');
+      }
+    },
+    
+    async findById(taskId: number) {
+      if (useMySQL()) {
+        return await mysqlOperations.exportTasks.findExportTaskById(taskId);
+      } else {
+        throw new Error('Export tasks are only supported in MySQL');
+      }
+    },
+    
+    async update(taskId: number, updateData: { status?: string, file_path?: string, file_name?: string, error_message?: string, progress_message?: string }) {
+      if (useMySQL()) {
+        return await mysqlOperations.exportTasks.updateExportTask(taskId, updateData);
+      } else {
+        throw new Error('Export tasks are only supported in MySQL');
+      }
+    }
+  },
+  
   // 系统信息方法
   async getTableCount() {
     return await getTableCount();
@@ -981,12 +1080,12 @@ export async function initDatabase() {
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS teams (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        team_name VARCHAR(100) NOT NULL,
+        team_name VARCHAR(500) NOT NULL,
         password VARCHAR(255) NOT NULL,
         contact_email VARCHAR(100) NOT NULL,
         encrypted_info TEXT,
         is_enterprise BOOLEAN DEFAULT FALSE,
-        enterprise_name VARCHAR(200),
+        enterprise_name VARCHAR(500),
         enterprise_license VARCHAR(500),
         project_stage VARCHAR(100),
         project_stage_others TEXT,
@@ -1154,7 +1253,7 @@ export async function initDatabase() {
     for (const field of fieldModifications) {
       try {
         await pool.execute(`ALTER TABLE core_members MODIFY COLUMN ${field.name} ${field.type}`);
-        console.log(`✅ 修改字段 ${field.name} 为 ${field.type}`);
+        // 修改字段 ${field.name} 为 ${field.type}
       } catch (error) {
         console.warn(`Warning: Could not modify ${field.name} column:`, error.message);
       }
@@ -1226,6 +1325,23 @@ export async function initDatabase() {
       }
     }
     
+    // 创建导出任务表
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS export_tasks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        task_type VARCHAR(50) NOT NULL DEFAULT 'export_all',
+        status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+        created_by VARCHAR(100),
+        file_path VARCHAR(500),
+        file_name VARCHAR(255),
+        error_message TEXT,
+        progress_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP NULL
+      )
+    `);
+    
     // 创建管理员用户
     const bcrypt = require('bcryptjs');
     const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
@@ -1235,7 +1351,7 @@ export async function initDatabase() {
       VALUES (?, ?, 'admin', NULL, 'admin')
     `, [process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword]);
     
-    console.log('MySQL database initialized successfully');
+    // MySQL database initialized successfully
   } else {
     // SQLite初始化逻辑
     const { initDatabase: initSQLite } = await import('./simple-sqlite');

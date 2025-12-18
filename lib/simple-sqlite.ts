@@ -167,7 +167,7 @@ export async function initDatabase() {
             console.error('Admin user creation error:', err);
             reject(err);
           } else {
-            console.log('SQLite database initialized successfully');
+            // SQLite database initialized successfully
             resolve();
           }
         });
@@ -207,56 +207,6 @@ export const dbOperations = {
         db.all('SELECT * FROM users ORDER BY created_at DESC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
-        });
-      });
-    },
-    
-    update: (id: number, updateData: any): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        const fields = [];
-        const values = [];
-        
-        if (updateData.username) {
-          fields.push('username = ?');
-          values.push(updateData.username);
-        }
-        if (updateData.password) {
-          fields.push('password = ?');
-          values.push(updateData.password);
-        }
-        if (updateData.encrypted_info !== undefined) {
-          fields.push('encrypted_info = ?');
-          values.push(updateData.encrypted_info);
-        }
-        if (updateData.expert_type) {
-          fields.push('expert_type = ?');
-          values.push(updateData.expert_type);
-        }
-        
-        if (fields.length === 0) {
-          resolve({ changes: 0 });
-          return;
-        }
-        
-        fields.push('updated_at = CURRENT_TIMESTAMP');
-        values.push(id);
-        
-        db.run(
-          `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
-          values,
-          function(err) {
-            if (err) reject(err);
-            else resolve({ changes: this.changes });
-          }
-        );
-      });
-    },
-    
-    delete: (id: number): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
-          if (err) reject(err);
-          else resolve({ changes: this.changes });
         });
       });
     },
@@ -499,9 +449,12 @@ export const dbOperations = {
     findByExpert: (expertId: number): Promise<any[]> => {
       return new Promise((resolve, reject) => {
         db.all(`
-          SELECT ra.*, f.original_name, f.file_path, f.mime_type, f.team_name
+          SELECT ra.*, f.original_name, f.file_path, f.mime_type,
+                 COALESCE(t.team_name, f.team_name) as team_name
           FROM review_assignments ra
           JOIN files f ON ra.file_id = f.id
+          LEFT JOIN team_documents td ON td.document_path = f.file_path
+          LEFT JOIN teams t ON t.id = td.team_id
           WHERE ra.expert_id = ? AND f.upload_status = 'completed'
           ORDER BY ra.created_at DESC
         `, [expertId], (err, rows) => {
@@ -543,10 +496,13 @@ export const dbOperations = {
     findByExpertAndTeam: (expertId: number, teamName: string): Promise<any[]> => {
       return new Promise((resolve, reject) => {
         db.all(`
-          SELECT ra.*, f.original_name, f.file_path, f.mime_type, f.team_name
+          SELECT ra.*, f.original_name, f.file_path, f.mime_type,
+                 COALESCE(t.team_name, f.team_name) as team_name
           FROM review_assignments ra
           JOIN files f ON ra.file_id = f.id
-          WHERE ra.expert_id = ? AND f.team_name = ?
+          LEFT JOIN team_documents td ON td.document_path = f.file_path
+          LEFT JOIN teams t ON t.id = td.team_id
+          WHERE ra.expert_id = ? AND COALESCE(t.team_name, f.team_name) = ?
         `, [expertId, teamName], (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
@@ -567,11 +523,13 @@ export const dbOperations = {
             ra.created_at,
             ra.updated_at,
             f.original_name,
-            f.team_name,
+            COALESCE(t.team_name, f.team_name) as team_name,
             u.username as expert_name
           FROM review_assignments ra
           JOIN files f ON ra.file_id = f.id
           JOIN users u ON ra.expert_id = u.id
+          LEFT JOIN team_documents td ON td.document_path = f.file_path
+          LEFT JOIN teams t ON t.id = td.team_id
           ORDER BY ra.created_at DESC
         `, (err, rows) => {
           if (err) reject(err);
@@ -587,19 +545,6 @@ export const dbOperations = {
           SET score = ?, comments = ?, assignment_status = 'completed', updated_at = CURRENT_TIMESTAMP 
           WHERE id = ?
         `, [score, comments, id], function(err) {
-          if (err) reject(err);
-          else resolve({ changes: this.changes });
-        });
-      });
-    },
-    
-    updateStatus: (id: number, status: string, score?: number, comments?: string): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        db.run(`
-          UPDATE review_assignments 
-          SET assignment_status = ?, score = ?, comments = ?, updated_at = CURRENT_TIMESTAMP 
-          WHERE id = ?
-        `, [status, score || null, comments || null, id], function(err) {
           if (err) reject(err);
           else resolve({ changes: this.changes });
         });
@@ -704,11 +649,11 @@ export const dbOperations = {
 
   // 核心成员操作
   coreMembers: {
-    create: (teamId: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, memberOrder?: number): Promise<any> => {
+    create: (teamId: number, memberOrder: number, name: string, position: string, nationality: string, idType: string, idNumber: string, cvPath?: string, gender?: string, birthDate?: string, phone?: string, email?: string, university?: string, highestDegree?: string, organization?: string): Promise<any> => {
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null],
+          'INSERT INTO core_members (team_id, member_order, name, position, nationality, id_type, id_number, cv_path, gender, birth_date, phone, email, university, highest_degree, organization) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [teamId, memberOrder || 0, name, position, nationality, idType, idNumber, cvPath || null, gender || null, birthDate || null, phone || null, email || null, university || null, highestDegree || null, organization || null],
           function(err) {
             if (err) reject(err);
             else resolve({ lastInsertRowid: this.lastID, changes: this.changes });

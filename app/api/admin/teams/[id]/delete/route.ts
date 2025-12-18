@@ -18,7 +18,7 @@ export async function DELETE(
     const token = authHeader.substring(7);
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'expert_review_jwt_secret_2024_production') as any;
     } catch (error) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }
@@ -69,7 +69,8 @@ export async function DELETE(
       
       // 删除团队图片
       console.log(`🔍 查找团队图片记录...`);
-      const teamImages = await dbOperations.teamImages.findByTeam(teamId);
+      const teamImagesResult = await dbOperations.teamImages.findByTeam(teamId);
+      const teamImages = Array.isArray(teamImagesResult) ? teamImagesResult : [];
       console.log(`📸 找到 ${teamImages.length} 个团队图片记录`);
       for (const image of teamImages) {
         console.log(`🗑️ 删除图片记录 ID: ${image.id}`);
@@ -79,7 +80,8 @@ export async function DELETE(
 
       // 删除团队文档
       console.log(`🔍 查找团队文档记录...`);
-      const teamDocuments = await dbOperations.teamDocuments.findByTeam(teamId);
+      const teamDocumentsResult = await dbOperations.teamDocuments.findByTeam(teamId);
+      const teamDocuments = Array.isArray(teamDocumentsResult) ? teamDocumentsResult : [];
       console.log(`📄 找到 ${teamDocuments.length} 个团队文档记录`);
       for (const document of teamDocuments) {
         console.log(`🗑️ 删除文档记录 ID: ${document.id}`);
@@ -89,7 +91,8 @@ export async function DELETE(
 
       // 删除核心成员
       console.log(`🔍 查找核心成员记录...`);
-      const coreMembers = await dbOperations.coreMembers.findByTeam(teamId);
+      const coreMembersResult = await dbOperations.coreMembers.findByTeam(teamId);
+      const coreMembers = Array.isArray(coreMembersResult) ? coreMembersResult : [];
       console.log(`👥 找到 ${coreMembers.length} 个核心成员记录`);
       for (const member of coreMembers) {
         console.log(`🗑️ 删除核心成员记录 ID: ${member.id}`);
@@ -99,13 +102,15 @@ export async function DELETE(
 
       // 删除评审分配记录
       console.log(`🔍 查找团队文件记录...`);
-      const teamFiles = await dbOperations.files.findByTeam(team.team_name);
+      const teamFilesResult = await dbOperations.files.findByTeam(team.team_name);
+      const teamFiles = Array.isArray(teamFilesResult) ? teamFilesResult : [];
       console.log(`📁 找到 ${teamFiles.length} 个团队文件记录`);
       let totalAssignments = 0;
       
       for (const file of teamFiles) {
         console.log(`🔍 查找文件 ${file.id} 的评审分配...`);
-        const assignments = await dbOperations.assignments.findByFile(file.id);
+        const assignmentsResult = await dbOperations.assignments.findByFile(file.id);
+        const assignments = Array.isArray(assignmentsResult) ? assignmentsResult : [];
         console.log(`📝 找到 ${assignments.length} 个评审分配记录`);
         for (const assignment of assignments) {
           console.log(`🗑️ 删除评审分配记录 ID: ${assignment.id}`);

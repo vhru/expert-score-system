@@ -31,25 +31,31 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   const t = (key: string) => {
-    const translations: Record<Language, Translations> = {
-      zh: zhTranslations,
-      en: enTranslations,
-    };
-    
-    const keys = key.split('.');
-    let value: any = translations[language];
-    
-    for (const k of keys) {
-      value = value?.[k];
-    }
-    
-    // 如果找不到翻译，返回key本身
-    if (value === undefined || value === null) {
-      console.warn(`Translation missing for key: ${key} in language: ${language}`);
+    try {
+      const translations: Record<Language, Translations> = {
+        zh: zhTranslations,
+        en: enTranslations,
+      };
+      
+      const keys = key.split('.');
+      let value: any = translations[language];
+      
+      for (const k of keys) {
+        value = value?.[k];
+      }
+      
+      // 如果找不到翻译，返回key本身，但添加调试信息
+      if (value === undefined || value === null) {
+        console.warn(`Translation missing for key: ${key} in language: ${language}`);
+        console.warn(`Available translations for ${language}:`, Object.keys(translations[language] || {}));
+        return key;
+      }
+      
+      return value;
+    } catch (error) {
+      console.error(`Translation error for key: ${key}`, error);
       return key;
     }
-    
-    return value;
   };
 
   return (

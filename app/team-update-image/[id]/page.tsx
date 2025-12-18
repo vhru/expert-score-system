@@ -138,7 +138,7 @@ export default function UpdateImagePage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
               />
               <p className="mt-1 text-xs text-gray-500">
-                支持 JPG、PNG、GIF 格式，文件大小不超过 10MB
+                支持 JPG、PNG 格式，文件大小不超过 10MB
               </p>
             </div>
 

@@ -11,7 +11,9 @@ interface TeamAudit {
   project_name?: string;
   project_brief?: string;
   project_stage?: string;
+  project_stage_others?: string;
   contact_person_name?: string;
+  contact_person_position?: string;
   contact_person_phone?: string;
   contact_person_email?: string;
   registration_country?: string;
@@ -23,6 +25,10 @@ interface TeamAudit {
   registered_capital_usd?: number;
   website?: string;
   enterprise_overview?: string;
+  enterprise_phone?: string;
+  nationality_type?: string;
+  selected_countries?: string;
+  nationality_others?: string;
   audit_status: 'pending' | 'approved' | 'rejected';
   audit_notes?: string;
   audited_at?: string;
@@ -40,6 +46,10 @@ export default function AdminAuditPage() {
   const [auditNotes, setAuditNotes] = useState('');
   const [auditing, setAuditing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [exporting, setExporting] = useState(false);
+  const [exportTaskId, setExportTaskId] = useState<number | null>(null);
+  const [exportProgress, setExportProgress] = useState('');
+  const [showPerformanceWarning, setShowPerformanceWarning] = useState(true);
 
   useEffect(() => {
     fetchTeams();
@@ -65,7 +75,7 @@ export default function AdminAuditPage() {
     }
   };
 
-  const handleAudit = async (teamId: number, status: 'approved' | 'rejected') => {
+  const handleAudit = async (teamId: number, status: 'pending' | 'approved' | 'rejected') => {
     setAuditing(true);
     try {
       const token = localStorage.getItem('token');
@@ -120,6 +130,152 @@ export default function AdminAuditPage() {
       }
     } catch (error) {
       console.error('Download error:', error);
+    }
+  };
+
+  const handleExportAll = async () => {
+    // 确认提示
+    if (!confirm('⚠️ 性能提示\n\n导出所有团队信息会对系统性能造成影响，响应时间较久（可能需要1-5分钟），请勿短时间内频繁操作。\n\n是否继续？')) {
+      return;
+    }
+
+    setExporting(true);
+    setExportProgress('正在创建导出任务...');
+    setExportTaskId(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/teams/export-all', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '创建任务失败');
+      }
+
+      const data = await response.json();
+      const taskId = data.taskId;
+      setExportTaskId(taskId);
+      setExportProgress(data.message || '任务已创建，正在处理...');
+
+      // 开始轮询任务状态
+      pollTaskStatus(taskId);
+    } catch (error: any) {
+      console.error('导出错误:', error);
+      alert(`创建导出任务失败: ${error.message || '未知错误'}`);
+      setExporting(false);
+      setExportProgress('');
+    }
+  };
+
+  const pollTaskStatus = async (taskId: number) => {
+    const token = localStorage.getItem('token');
+    const maxAttempts = 300; // 最多轮询5分钟（每1秒一次）
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/admin/teams/export-all/${taskId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('查询任务状态失败');
+        }
+
+        const data = await response.json();
+        const task = data.task;
+
+        setExportProgress(task.progress_message || `状态: ${task.status}`);
+
+        if (task.status === 'completed') {
+          // 任务完成，下载文件
+          downloadExportFile(taskId);
+          setExporting(false);
+          setExportProgress('');
+          alert('✅ 导出完成！');
+        } else if (task.status === 'failed') {
+          setExporting(false);
+          setExportProgress('');
+          alert(`❌ 导出失败: ${task.error_message || '未知错误'}`);
+        } else if (task.status === 'processing') {
+          // 继续轮询
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(checkStatus, 1000); // 1秒后再次查询
+          } else {
+            setExporting(false);
+            setExportProgress('');
+            alert('⏱️ 导出超时，请稍后查询任务状态');
+          }
+        } else {
+          // pending状态，继续轮询
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(checkStatus, 1000);
+          } else {
+            setExporting(false);
+            setExportProgress('');
+            alert('⏱️ 任务处理超时');
+          }
+        }
+      } catch (error: any) {
+        console.error('查询任务状态错误:', error);
+        setExporting(false);
+        setExportProgress('');
+        alert(`查询任务状态失败: ${error.message || '未知错误'}`);
+      }
+    };
+
+    // 开始第一次查询
+    setTimeout(checkStatus, 1000);
+  };
+
+  const downloadExportFile = async (taskId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/teams/export-all/${taskId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('下载失败');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // 从响应头获取文件名
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let fileName = `所有团队信息整合_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (fileNameMatch) {
+          fileName = decodeURIComponent(fileNameMatch[1]);
+        }
+      }
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      console.error('下载文件错误:', error);
+      alert(`下载失败: ${error.message || '未知错误'}`);
     }
   };
 
@@ -215,6 +371,38 @@ export default function AdminAuditPage() {
                 <option value="approved">审核通过</option>
                 <option value="rejected">审核不通过</option>
               </select>
+              <button
+                onClick={fetchTeams}
+                disabled={loading}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                刷新
+              </button>
+              <button
+                onClick={handleExportAll}
+                disabled={exporting || loading}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+              >
+                {exporting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    导出中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    导出所有
+                  </>
+                )}
+              </button>
               <a
                 href="/admin-dashboard"
                 className="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -225,6 +413,51 @@ export default function AdminAuditPage() {
           </div>
         </div>
       </header>
+
+      {/* 性能提示横幅 */}
+      {showPerformanceWarning && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-auto max-w-7xl mt-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm text-yellow-700">
+                <strong>⚠️ 性能提示：</strong> 导出所有团队信息会对系统性能造成影响，响应时间较久（可能需要1-5分钟），请勿短时间内频繁操作。
+              </p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setShowPerformanceWarning(false)}
+                className="inline-flex text-yellow-700 hover:text-yellow-900"
+              >
+                <span className="sr-only">关闭</span>
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 导出进度提示 */}
+      {exporting && exportProgress && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mx-auto max-w-7xl mt-4">
+          <div className="flex items-center">
+            <svg className="animate-spin h-5 w-5 text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-sm text-blue-700">
+              <strong>正在导出：</strong> {exportProgress}
+              {exportTaskId && ` (任务ID: ${exportTaskId})`}
+            </p>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -291,10 +524,45 @@ export default function AdminAuditPage() {
                       <div className="space-y-2 text-sm">
                         <p><span className="font-medium">团队名称:</span> {selectedTeam.team_name}</p>
                         <p><span className="font-medium">联系邮箱:</span> {selectedTeam.contact_email}</p>
-                        <p><span className="font-medium">团队类型:</span> {selectedTeam.is_enterprise ? '企业团队' : '普通团队'}</p>
+                        <p><span className="font-medium">团队类型:</span> {selectedTeam.is_enterprise ? '企业团队' : '团队'}</p>
                         {selectedTeam.project_name && <p><span className="font-medium">项目名称:</span> {selectedTeam.project_name}</p>}
                         {selectedTeam.project_brief && <p><span className="font-medium">项目简介:</span> {selectedTeam.project_brief}</p>}
                         {selectedTeam.project_stage && <p><span className="font-medium">项目阶段:</span> {selectedTeam.project_stage}</p>}
+                        {selectedTeam.project_stage_others && <p><span className="font-medium">项目阶段其他:</span> {selectedTeam.project_stage_others}</p>}
+                        {selectedTeam.is_enterprise ? (
+                          // 企业团队显示注册国家
+                          selectedTeam.nationality_others && <p><span className="font-medium">企业注册国家:</span> {selectedTeam.nationality_others}</p>
+                        ) : (
+                          // 普通团队显示核心成员国籍
+                          <>
+                            {selectedTeam.nationality_type && <p><span className="font-medium">国别类型:</span> {selectedTeam.nationality_type === 'single' ? '单一国别' : '多国别'}</p>}
+                            {selectedTeam.selected_countries && (
+                              <p><span className="font-medium">选择的国家:</span> {
+                                (() => {
+                                  try {
+                                    const countries = JSON.parse(selectedTeam.selected_countries);
+                                    if (Array.isArray(countries)) {
+                                      // 将英文键转换为中文名称
+                                      const countryMap: { [key: string]: string } = {
+                                        'china': '中国',
+                                        'thailand': '泰国',
+                                        'cambodia': '柬埔寨',
+                                        'vietnam': '越南',
+                                        'laos': '老挝',
+                                        'myanmar': '缅甸'
+                                      };
+                                      return countries.map(country => countryMap[country] || country).join(', ');
+                                    }
+                                    return selectedTeam.selected_countries;
+                                  } catch {
+                                    return selectedTeam.selected_countries;
+                                  }
+                                })()
+                              }</p>
+                            )}
+                            {selectedTeam.nationality_others && <p><span className="font-medium">其他国别说明:</span> {selectedTeam.nationality_others}</p>}
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -303,6 +571,7 @@ export default function AdminAuditPage() {
                       <h3 className="text-md font-medium text-gray-900 mb-3">联系人信息</h3>
                       <div className="space-y-2 text-sm">
                         {selectedTeam.contact_person_name && <p><span className="font-medium">联系人:</span> {selectedTeam.contact_person_name}</p>}
+                        {selectedTeam.contact_person_position && <p><span className="font-medium">联系人职务:</span> {selectedTeam.contact_person_position}</p>}
                         {selectedTeam.contact_person_phone && <p><span className="font-medium">联系电话:</span> {selectedTeam.contact_person_phone}</p>}
                         {selectedTeam.contact_person_email && <p><span className="font-medium">联系邮箱:</span> {selectedTeam.contact_person_email}</p>}
                         {selectedTeam.registration_country && <p><span className="font-medium">注册国家:</span> {selectedTeam.registration_country}</p>}
@@ -320,6 +589,8 @@ export default function AdminAuditPage() {
                           {selectedTeam.enterprise_name && <p><span className="font-medium">企业名称:</span> {selectedTeam.enterprise_name}</p>}
                           {selectedTeam.unified_social_credit_code && <p><span className="font-medium">统一社会信用代码:</span> {selectedTeam.unified_social_credit_code}</p>}
                           {selectedTeam.legal_representative && <p><span className="font-medium">法定代表人:</span> {selectedTeam.legal_representative}</p>}
+                          {selectedTeam.registration_year && <p><span className="font-medium">注册年份:</span> {selectedTeam.registration_year}</p>}
+                          {selectedTeam.enterprise_phone && <p><span className="font-medium">电话:</span> {selectedTeam.enterprise_phone}</p>}
                         </div>
                         <div>
                           {selectedTeam.headquarters_location && <p><span className="font-medium">总部位置:</span> {selectedTeam.headquarters_location}</p>}
@@ -344,12 +615,17 @@ export default function AdminAuditPage() {
                         {selectedTeam.coreMembers.map((member, index) => (
                           <div key={index} className="bg-gray-50 rounded-lg p-3 text-sm">
                             <p><span className="font-medium">姓名:</span> {member.name}</p>
-                            <p><span className="font-medium">国籍:</span> {member.nationality}</p>
-                            <p><span className="font-medium">性别:</span> {member.gender}</p>
-                            <p><span className="font-medium">出生日期:</span> {member.birth_date}</p>
-                            <p><span className="font-medium">学历:</span> {member.highest_degree}</p>
-                            <p><span className="font-medium">组织:</span> {member.organization}</p>
-                            <p><span className="font-medium">职位:</span> {member.position}</p>
+                            <p><span className="font-medium">国籍:</span> {member.nationality || '未填写'}</p>
+                            {member.gender && <p><span className="font-medium">性别:</span> {member.gender}</p>}
+                            {member.birth_date && <p><span className="font-medium">出生年月:</span> {member.birth_date}</p>}
+                            {member.id_type && <p><span className="font-medium">证件类型:</span> {member.id_type === 'id_card' ? '身份证' : '护照'}</p>}
+                            {member.id_number && <p><span className="font-medium">证件号码:</span> {member.id_number}</p>}
+                            {member.phone && <p><span className="font-medium">电话:</span> {member.phone}</p>}
+                            {member.email && <p><span className="font-medium">电子邮箱:</span> {member.email}</p>}
+                            {member.university && <p><span className="font-medium">毕业院校:</span> {member.university}</p>}
+                            {member.highest_degree && <p><span className="font-medium">学历:</span> {member.highest_degree}</p>}
+                            {member.organization && <p><span className="font-medium">所在单位:</span> {member.organization}</p>}
+                            <p><span className="font-medium">职位/职称:</span> {member.position}</p>
                           </div>
                         ))}
                       </div>
@@ -422,12 +698,32 @@ export default function AdminAuditPage() {
                     </div>
                   )}
 
-                  {/* 审核历史 */}
+                  {/* 审核历史 / 修改审核状态 */}
                   {selectedTeam.audit_status !== 'pending' && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h3 className="text-md font-medium text-gray-900 mb-3">审核历史</h3>
-                      <div className="bg-gray-50 rounded-lg p-4 text-sm">
-                        <p><span className="font-medium">审核状态:</span> {getStatusText(selectedTeam.audit_status)}</p>
+                      <h3 className="text-md font-medium text-gray-900 mb-3">审核历史 / 修改审核状态</h3>
+                      <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-medium">审核状态:</span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedTeam.audit_status)}`}>
+                            {getStatusText(selectedTeam.audit_status)}
+                          </span>
+                          <select
+                            value={selectedTeam.audit_status}
+                            onChange={(e) => {
+                              const newStatus = e.target.value as 'pending' | 'approved' | 'rejected';
+                              if (confirm(`确定要将审核状态修改为"${getStatusText(newStatus)}"吗？`)) {
+                                handleAudit(selectedTeam.id, newStatus);
+                              }
+                            }}
+                            disabled={auditing}
+                            className="ml-2 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                          >
+                            <option value="pending">待审核</option>
+                            <option value="approved">审核通过</option>
+                            <option value="rejected">审核不通过</option>
+                          </select>
+                        </div>
                         {selectedTeam.audited_at && <p><span className="font-medium">审核时间:</span> {new Date(selectedTeam.audited_at).toLocaleString()}</p>}
                         {selectedTeam.audited_by && <p><span className="font-medium">审核人:</span> {selectedTeam.audited_by}</p>}
                         {selectedTeam.audit_notes && <p><span className="font-medium">审核备注:</span> {selectedTeam.audit_notes}</p>}

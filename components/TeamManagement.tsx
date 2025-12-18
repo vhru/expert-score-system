@@ -57,6 +57,7 @@ interface Team {
       contactPersonPosition?: string;
       contactPersonPhone?: string;
       contactPersonEmail?: string;
+      contactPersonUnit?: string;
     };
     enterpriseInfo?: {
       enterpriseName?: string;
@@ -128,7 +129,6 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [deleting, setDeleting] = useState(false);
-
   const fetchTeams = async () => {
     try {
       const response = await fetch('/api/admin/teams', {
@@ -537,6 +537,18 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                       </span>
                     </div>
                     <div>
+                      <span className="text-gray-500">审核状态:</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        selectedTeam.audit_status === 'approved' 
+                          ? 'bg-green-100 text-green-800' 
+                          : selectedTeam.audit_status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedTeam.audit_status === 'approved' ? '审核通过' : selectedTeam.audit_status === 'rejected' ? '审核拒绝' : '待审核'}
+                      </span>
+                    </div>
+                    <div>
                       <span className="text-gray-500">联系邮箱:</span>
                       <p className="font-medium">{selectedTeam.contact_email}</p>
                     </div>
@@ -604,6 +616,10 @@ export default function TeamManagement({ token, onUpdate }: TeamManagementProps)
                           <div>
                             <span className="text-gray-500">联系人邮箱:</span>
                             <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonEmail || '未填写'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">单位:</span>
+                            <p className="font-medium">{selectedTeam.teamInfo.contactInfo.contactPersonUnit || '未填写'}</p>
                           </div>
                         </div>
                       </div>

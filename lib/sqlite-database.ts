@@ -82,7 +82,7 @@ export async function initDatabase() {
     `);
     stmt.run(process.env.ADMIN_EMAIL || 'admin@example.com', adminPassword);
 
-    console.log('SQLite database initialized successfully');
+    // SQLite database initialized successfully
   } catch (error) {
     console.error('Database initialization failed:', error);
     throw error;

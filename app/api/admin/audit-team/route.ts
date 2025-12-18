@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
-    if (!['approved', 'rejected'].includes(status)) {
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
       return NextResponse.json({ error: '无效的审核状态' }, { status: 400 });
     }
 

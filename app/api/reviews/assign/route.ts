@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: result.message,
-      assignments: result.assignments
+      assignments: result.assignments,
+      statistics: result.statistics,
+      skippedTeams: result.skippedTeams || [],
+      unassignedTeams: result.unassignedTeams || []
     });
 
   } catch (error) {

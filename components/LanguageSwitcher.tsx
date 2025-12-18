@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage } from '@/lib/language-context';
 
 export default function LanguageSwitcher() {
   const { language, changeLanguage } = useLanguage();

@@ -23,7 +23,7 @@ export async function GET(
     }
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'expert_review_jwt_secret_2024_production') as any;
     } catch (error) {
       return NextResponse.json({ error: '无效的token' }, { status: 401 });
     }

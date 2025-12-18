@@ -32,6 +32,7 @@ export default function EnterpriseRegisterPage() {
   const [basicInfo, setBasicInfo] = useState({
     projectName: '',
     registrationCountry: '',
+    registrationCountryOthers: '',
     projectBrief: '',
     projectStage: '',
     projectStageOthers: '',
@@ -57,7 +58,8 @@ export default function EnterpriseRegisterPage() {
     contactPersonName: '',
     contactPersonPosition: '',
     contactPersonPhone: '',
-    contactPersonEmail: ''
+    contactPersonEmail: '',
+    contactPersonUnit: ''
   });
 
   // 核心成员
@@ -152,6 +154,7 @@ export default function EnterpriseRegisterPage() {
       return;
     }
 
+
     if (!basicInfo.projectStage) {
       setError(t('common.required') === '必填' ? '请选择项目阶段' : 'Please select project stage');
       setLoading(false);
@@ -171,7 +174,7 @@ export default function EnterpriseRegisterPage() {
     }
 
     if (!enterpriseInfo.registrationYear.trim()) {
-      setError(t('common.required') === '必填' ? '注册年份不能为空' : 'Registration year is required');
+      setError(t('common.required') === '必填' ? '注册时间不能为空' : 'Registration time is required');
       setLoading(false);
       return;
     }
@@ -324,6 +327,16 @@ export default function EnterpriseRegisterPage() {
               </div>
             )}
 
+            {/* 隐私提示和必填说明 */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-amber-800 mb-2">
+                {t('common.privacyNotice')}
+              </p>
+              <p className="text-sm text-amber-800">
+                {t('common.required') === '必填' ? '标有 * 的字段为必填项' : 'Fields marked with * are required'}
+              </p>
+            </div>
+
             {/* 1. 参赛项目信息 */}
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('enterpriseRegister.projectInfo.title')}</h2>
@@ -364,12 +377,28 @@ export default function EnterpriseRegisterPage() {
                     <option value="myanmar">{t('enterpriseRegister.projectInfo.countries.myanmar')}</option>
                     <option value="others">{t('enterpriseRegister.projectInfo.countries.others')}</option>
                   </select>
+                  
+                  {/* 其他国家的文本输入框 */}
+                  {basicInfo.registrationCountry === 'others' && (
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        name="registrationCountryOthers"
+                        value={basicInfo.registrationCountryOthers}
+                        onChange={handleBasicInfoChange}
+                        placeholder={t('common.required') === '必填' ? '请详细说明企业注册国家' : 'Please specify the registration country'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
+
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-{t('enterpriseRegister.projectInfo.projectBrief')} * {t('common.required') === '必填' ? '(500字以内)' : '(within 500 words)'}
+{t('enterpriseRegister.projectInfo.projectBrief')} *
                 </label>
                 <textarea
                   name="projectBrief"
@@ -377,11 +406,11 @@ export default function EnterpriseRegisterPage() {
                   onChange={handleBasicInfoChange}
                   required
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                    placeholder={t('common.required') === '必填' ? "项目背景、概述、团队介绍、核心技术、创新点、专利及其他研究成果，以及未来收益和其他亮点等" : "Project background, overview, team introduction, core technology, innovation points, patents and other research results, future benefits and other highlights"}
                 />
-                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{basicInfo.projectBrief.length}/2000</p>
               </div>
 
 
@@ -462,16 +491,16 @@ export default function EnterpriseRegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-{t('enterpriseRegister.enterpriseInfo.registrationYear')} *
+                    {t('enterpriseRegister.enterpriseInfo.registrationTime')} *
                   </label>
                   <input
-                    type="number"
+                    type="date"
                     name="registrationYear"
                     value={enterpriseInfo.registrationYear}
                     onChange={handleEnterpriseInfoChange}
                     required
-                    min="2019"
-                    max="2024"
+                    min="2019-01-01"
+                    max="2025-12-31"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -549,17 +578,17 @@ export default function EnterpriseRegisterPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('enterpriseRegister.enterpriseInfo.enterpriseOverview') + " (500字以内)"}
+                  {t('enterpriseRegister.enterpriseInfo.enterpriseOverview')}
                 </label>
                 <textarea
                   name="enterpriseOverview"
                   value={enterpriseInfo.enterpriseOverview}
                   onChange={handleEnterpriseInfoChange}
                   rows={4}
-                  maxLength={500}
+                  maxLength={2000}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-sm text-gray-500 mt-1">{enterpriseInfo.enterpriseOverview.length}/500</p>
+                <p className="text-sm text-gray-500 mt-1">{enterpriseInfo.enterpriseOverview.length}/2000</p>
               </div>
             </div>
 
@@ -621,6 +650,20 @@ export default function EnterpriseRegisterPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('enterpriseRegister.contactInfo.contactPersonUnit') + " *"}
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPersonUnit"
+                    value={contactInfo.contactPersonUnit}
+                    onChange={handleContactInfoChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -642,7 +685,9 @@ export default function EnterpriseRegisterPage() {
               {coreMembers.map((member, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-4">
-                     <h3 className="font-medium text-gray-900">{t('enterpriseRegister.coreMembers.member')} {index + 1}</h3>
+                     <h3 className="font-medium text-gray-900">
+                       {index === 0 ? t('enterpriseRegister.coreMembers.projectLeader') : `${t('enterpriseRegister.coreMembers.member')} ${index + 1}`}
+                     </h3>
                     {coreMembers.length > 3 && (
                       <button
                         type="button"
@@ -667,7 +712,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.nationality')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.nationality')} *</label>
                       <input
                         type="text"
                         value={member.nationality}
@@ -677,7 +722,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.gender')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.gender')} *</label>
                       <select
                         value={member.gender}
                         onChange={(e) => handleCoreMemberChange(index, 'gender', e.target.value)}
@@ -690,7 +735,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.birthDate')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.birthDate')} *</label>
                       <input
                         type="date"
                         value={member.birthDate}
@@ -750,7 +795,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.phone')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.phone')} *</label>
                       <input
                         type="tel"
                         value={member.phone}
@@ -781,7 +826,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.highestDegree')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.highestDegree')} *</label>
                       <select
                         value={member.highestDegree}
                         onChange={(e) => handleCoreMemberChange(index, 'highestDegree', e.target.value)}
@@ -796,7 +841,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.organization')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.organization')} *</label>
                       <input
                         type="text"
                         value={member.organization}
@@ -806,7 +851,7 @@ export default function EnterpriseRegisterPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.position')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('enterpriseRegister.coreMembers.position')} *</label>
                       <input
                         type="text"
                         value={member.position}

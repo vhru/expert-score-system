@@ -25,9 +25,9 @@ export default function PhotoUpload({ token, onUploadSuccess }: PhotoUploadProps
       }
       
       // 检查文件类型
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
-        setMessage('只支持JPG、PNG、GIF格式的图片');
+        setMessage('只支持JPG、PNG格式的图片');
         setMessageType('error');
         return;
       }
@@ -90,7 +90,7 @@ export default function PhotoUpload({ token, onUploadSuccess }: PhotoUploadProps
       <div>
         <h2 className="text-lg font-medium text-gray-900 mb-4">照片上传</h2>
         <p className="text-sm text-gray-600 mb-6">
-          支持JPG、PNG、GIF格式，单个文件最大10MB
+          支持JPG、PNG格式，单个文件最大10MB
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export default function PhotoUpload({ token, onUploadSuccess }: PhotoUploadProps
           <input
             id="photo"
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif"
+            accept="image/jpeg,image/jpg,image/png"
             onChange={handlePhotoChange}
             className="form-input"
             required

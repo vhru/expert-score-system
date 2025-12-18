@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       basicInfo.projectStageOthers, // 其他项目阶段说明
       'single', // 企业固定为单一国别
       JSON.stringify([basicInfo.registrationCountry]), // 企业注册国家存到 selected_countries，格式化为JSON数组
-      '' // nationality_others 留空
+      basicInfo.registrationCountry === 'others' ? (basicInfo.registrationCountryOthers || '') : '' // nationality_others 存储"其他"国家的文本说明
     );
 
     if (result.changes > 0 || result.affectedRows > 0) {
