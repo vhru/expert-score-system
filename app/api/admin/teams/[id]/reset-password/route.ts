@@ -9,8 +9,15 @@ export async function POST(
 ) {
   try {
     // 验证管理员权限
-    const authResult = await verifyToken(request);
-    if (!authResult.success || authResult.user?.role !== 'admin') {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const user = verifyToken(token);
+    
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: '权限不足' }, { status: 403 });
     }
 

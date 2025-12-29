@@ -76,3 +76,7 @@ GROUP BY reason_category
 ORDER BY team_count DESC;
 
 
+
+
+
+

@@ -296,6 +296,57 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
     }
   };
 
+  const escapeCsvCell = (value: unknown) => {
+    if (value === null || value === undefined) return '';
+    const s = String(value);
+    // RFC4180-ish: wrap if contains comma, quote, or newline
+    if (/[",\r\n]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
+  const downloadAssignmentsCsv = () => {
+    // 直接导出“评审任务列表”现有列（不引入 team_id 等新字段，避免破坏性改动）
+    const headers = ['文件名称', '专家', '状态', '评分', '分配时间', '更新时间'];
+
+    const lines = [
+      headers.map(escapeCsvCell).join(','),
+      ...assignments.map((a) => {
+        const fileName = a.team_name || a.original_name || '';
+        const expertName = a.expert_name ?? '';
+        const statusText = getStatusText(a.assignment_status);
+        const scoreText = (a.score === null || a.score === undefined) ? '-' : `${a.score} 分`;
+        const createdAt = a.created_at ? new Date(a.created_at).toLocaleString() : '';
+        const updatedAt = a.updated_at ? new Date(a.updated_at).toLocaleString() : '';
+        return [
+          fileName,
+          expertName,
+          statusText,
+          scoreText,
+          createdAt,
+          updatedAt,
+        ].map(escapeCsvCell).join(',');
+      }),
+    ];
+
+    const csv = '\uFEFF' + lines.join('\r\n'); // add BOM for Excel
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const filename = `评审任务列表_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.csv`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const completedCount = assignments.filter(a => a.assignment_status === 'completed').length;
   const totalCount = assignments.length;
 
@@ -309,6 +360,14 @@ export default function ReviewManagement({ token, onUpdate }: ReviewManagementPr
           </p>
         </div>
         <div className="flex space-x-3">
+          <button
+            onClick={downloadAssignmentsCsv}
+            disabled={loading || assignments.length === 0}
+            className="btn-secondary disabled:opacity-50"
+            title="下载当前评审任务列表（CSV）"
+          >
+            下载CSV
+          </button>
           <button
             onClick={handleAssignReviews}
             disabled={loading}
