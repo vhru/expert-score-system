@@ -164,7 +164,36 @@ npm run dev
 
 ## 部署说明
 
-### 生产环境部署
+### Docker容器部署（推荐）
+
+本项目使用Docker容器化部署，详细部署指南请参考：
+
+📖 **[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)** - 完整的Docker容器部署文档
+
+**快速部署命令：**
+
+```bash
+# 1. 安装Docker和Docker Compose
+curl -fsSL https://get.docker.com | bash -s docker
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 2. 配置环境变量
+cp env.example .env
+# 编辑 .env 文件，修改密码和密钥
+
+# 3. 创建文件存储目录
+sudo mkdir -p /opt/team_data
+sudo chown -R 1000:1000 /opt/team_data
+
+# 4. 启动服务
+docker-compose up -d --build
+
+# 5. 初始化数据库
+curl -X POST http://localhost:3000/api/init
+```
+
+### 传统部署方式
 
 1. **构建项目**:
 ```bash
@@ -176,11 +205,18 @@ npm run build
 npm start
 ```
 
-### 阿里云部署
+### 部署架构
 
-- **ECS**: 1核2G配置
-- **RDS MySQL**: 基础版
-- **OSS**: 标准存储（可选，用于文件存储）
+- **容器化部署**: Docker + Docker Compose
+- **数据库**: MySQL 8.0 (容器内)
+- **应用**: Next.js 14 (容器内)
+- **文件存储**: 主机目录挂载 (`/opt/team_data`)
+
+### 服务器要求
+
+- **最低配置**: 1核2G内存，10GB磁盘
+- **推荐配置**: 2核4G内存，20GB磁盘
+- **操作系统**: Ubuntu 20.04+ / CentOS 7+
 
 ## 开发计划
 
@@ -190,13 +226,21 @@ npm start
 - [x] Day 7-8: 数据加密 + 结果统计
 - [x] Day 9-10: 测试部署 + 优化
 
+## 文档索引
+
+- 📖 **[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)** - Docker容器部署完整指南（推荐）
+- 📖 **[DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md)** - 部署文档索引和快速查找
+- 📖 **[DEPLOYMENT.md](./DEPLOYMENT.md)** - 文件存储配置和备份策略
+- 📖 **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - 阿里云ECS部署指南
+- 📖 **[QUICKSTART.md](./QUICKSTART.md)** - 快速启动指南
+
 ## 注意事项
 
-1. 确保MySQL服务正在运行
-2. 检查文件上传目录权限
-3. 生产环境请修改默认密码
-4. 定期备份数据库
-5. 监控系统日志
+1. **生产环境部署**: 必须修改所有默认密码和密钥
+2. **文件存储**: 确保 `/opt/team_data` 目录权限正确
+3. **数据备份**: 定期备份数据库和文件存储目录
+4. **安全配置**: 配置防火墙，限制端口访问
+5. **监控日志**: 定期检查容器日志和系统资源
 
 ## 许可证
 
